@@ -655,10 +655,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
   // Change icon for exercise type button depending on type that is chosen.
   IconData _getIcon() {
-    if (exerciseType == 'Running') {
+    if (exerciseType == 'Outdoor Run' || exerciseType == 'Indoor Run')
+    {
       return Icons.directions_run;
     }
-    else if (exerciseType == 'Cycling') {
+    else if (exerciseType == 'Outdoor Biking' || exerciseType == 'Indoor Biking') {
       return Icons.directions_bike;
     }
     else {
