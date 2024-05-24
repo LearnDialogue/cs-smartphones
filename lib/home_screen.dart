@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:convert';
 
 import 'package:device_info/device_info.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,7 @@ import 'monitor_connect.dart';
 import 'settings.dart';
 import 'past_workouts.dart';
 import 'app_logger.dart';
+import 'package:path_provider/path_provider.dart';
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -191,7 +193,105 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Default exercise type.
-  String exerciseType = "Walking";
+  String exerciseType = "Outdoor Run";
+
+  // TODO: create page file files in filesystem that represent default workout types and metrics
+  // Create default page order files
+  void createDefaultWorkouts() async {
+    String appDocumentsDirectory = (await getApplicationDocumentsDirectory()).path;
+    Directory pageOrderDir = Directory("$appDocumentsDirectory/pageOrder");
+
+    // Create default page order files if none exist yet.
+    // This is a map from index of metric (what order it
+    // comes in) and the name of the metric;
+
+    if (!pageOrderDir.existsSync())
+    {
+      try {
+        // default outdoor run
+        File outRunFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Run.json").create(recursive: true);
+        Map<String, String> strKeys = {
+          "0": "Heart Rate",
+          "1": "Peer Heart Rate",
+          "2": "Heart Rate Zone",
+          "3": "Time",
+          "4": "Speed",
+          "5": "Distance",
+        };
+        String jsonString = jsonEncode(strKeys);
+        await outRunFile.writeAsString(jsonString);
+
+        // default indoor run
+        File inRunFile = await File("$appDocumentsDirectory/pageOrder/Indoor Run.json").create(recursive: true);
+        strKeys = {
+          "0": "Heart Rate",
+          "1": "Peer Heart Rate",
+          "2": "Heart Rate Zone",
+          "3": "Time",
+          "4": "Speed",
+        };
+        jsonString = jsonEncode(strKeys);
+        await inRunFile.writeAsString(jsonString);
+
+        // default outdoor walk
+        File outWalkFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Walk.json").create(recursive: true);
+        strKeys = {
+          "0": "Heart Rate",
+          "1": "Peer Heart Rate",
+          "2": "Heart Rate Zone",
+          "3": "Time",
+          "4": "Speed",
+          "5": "Distance"
+        };
+        jsonString = jsonEncode(strKeys);
+        await outWalkFile.writeAsString(jsonString);
+
+        // default indoor walk
+        File inWalkFile = await File("$appDocumentsDirectory/pageOrder/Indoor Walk.json").create(recursive: true);
+        strKeys = {
+          "0": "Heart Rate",
+          "1": "Peer Heart Rate",
+          "2": "Heart Rate Zone",
+          "3": "Time",
+          "4": "Speed",
+        };
+        jsonString = jsonEncode(strKeys);
+        await inWalkFile.writeAsString(jsonString);
+
+        // default outdoor bike
+        File outBikeFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Biking.json").create(recursive: true);
+        strKeys = {
+          "0": "Heart Rate",
+          "1": "Peer Heart Rate",
+          "2": "Heart Rate Zone",
+          "3": "Time",
+          "4": "Speed",
+          "5": "Distance",
+          "6": "Power"
+        };
+        jsonString = jsonEncode(strKeys);
+        await outBikeFile.writeAsString(jsonString);
+
+        // indoor bike
+        File inBikeFile = await File("$appDocumentsDirectory/pageOrder/Indoor Biking.json").create(recursive: true);
+        strKeys = {
+          "0": "Heart Rate",
+          "1": "Peer Heart Rate",
+          "2": "Heart Rate Zone",
+          "3": "Time",
+          "4": "Speed",
+          "5": "Power"
+        };
+        jsonString = jsonEncode(strKeys);
+        await inBikeFile.writeAsString(jsonString);
+      }
+      catch (e)
+      {
+        print("Error creating default page orders: $e");
+      }
+    }
+  }
+
 
   // Future map controller
   Completer<GoogleMapController> controller1 = Completer();
@@ -221,6 +321,9 @@ class _HomeScreenState extends State<HomeScreen> {
     _positionStreamSubscription = Geolocator.getPositionStream(
         locationSettings: LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 15))
         .listen(_onPositionUpdate);
+
+    // create the default workout pages
+    createDefaultWorkouts();
   }
 
   // Restore saved settings from local database

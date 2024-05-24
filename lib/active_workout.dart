@@ -403,6 +403,8 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
 
       // Create UI for monitors.
       // TODO: Only display monitor types that are connected?
+      // TODO (5-20-24): Here is where the stored workout json files will be read,
+      // and only specified metrics should be displayed
       var statsRow = Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
