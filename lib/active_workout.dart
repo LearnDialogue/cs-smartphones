@@ -409,6 +409,8 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       return totalDistance;
     }
 
+    // This uses the organizedMetrics map that describes the order of the metrics in each metrics UI box to
+    // build widgets and return them as a list.
     List<Widget> getFirstBoxWidgets()
     {
       try {
@@ -691,6 +693,140 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       }
     }
 
+    List<Widget> getPersonalStats()
+    {
+      var screenWidth = MediaQuery.of(context).size.width;
+      var screenHeight = MediaQuery.of(context).size.height;
+      final int? maxHR = int.tryParse(widget.settings.maxHR);
+      final int? displayHRPercent = _displayPercent
+          ? ((heartrate! / maxHR!) * 100).round()
+          : heartrate;
+      final String heartRateText = _displayPercent ? '%' : 'bpm';
+
+      try
+      {
+          List<Widget> widgetList = [
+              SizedBox(
+              height: 35,
+              child:
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    userName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, ),
+                  ),
+                ],
+              ),
+            )
+          ];
+
+          print(organizedMetrics[1]);
+          int lengthList = organizedMetrics[1]!.length;
+
+          for (int i = 0; i < lengthList; i++)
+          {
+              switch(organizedMetrics[1]?[i])
+              {
+                case "Heart Rate":
+                  widgetList.add(
+                    SizedBox(
+                      height: 30,
+                      child:
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          SizedBox(
+                            width: screenWidth * .1,
+                            child: const Icon(Icons.heart_broken, size: 30, color: Colors.white60,),
+                          ),
+                          GestureDetector(
+                              onTap: () {
+                                if (maxHR != null) {
+                                  setState(() {
+                                    _displayPercent = !_displayPercent;
+                                  });
+                                }
+                              },
+                              child :SizedBox(
+                                  width: screenWidth * .15,
+                                  child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      "$displayHRPercent",
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
+                                    ),)
+                              )
+                          ),
+                          SizedBox(
+                              width: screenWidth * .1,
+                              child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    heartRateText,
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 15, color: Colors.white60, fontWeight: FontWeight.w500),
+                                  ))
+                          ),
+                        ],
+                      ),
+                    )
+                  );
+                  break;
+                case "Power":
+                  widgetList.add(
+                    SizedBox(
+                      height: 45,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          SizedBox(
+                            width: screenWidth * .1,
+                            child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Colors.white60,),
+                          ),
+                          SizedBox(
+                              width: screenWidth * .15,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "$power",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
+                                ),)
+                          ),
+                          SizedBox(
+                              width: screenWidth * .1,
+                              child: const FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    "W",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 15, color: Colors.white60, fontWeight: FontWeight.w500),
+                                  ))
+                          ),
+                        ],
+                      ),
+                    )
+                  );
+                  break;
+              }
+          }
+          widgetList.add(
+            const SizedBox(
+              height: 5,
+            )
+          );
+          return widgetList;
+      }
+      catch (e)
+      {
+        print("exception: ${e.toString()}");
+        return [const Center(child: CircularProgressIndicator())];
+      }
+    }
+
     @override
     Widget build(BuildContext context) {
       String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -739,102 +875,9 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
               SizedBox(
                 width: screenWidth * .45,
                 child: Column(
-                  children: [
-                    SizedBox(
-                      height: 35,
-                      child:
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          Text(
-                            userName,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, ),
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 30,
-                      child:
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          SizedBox(
-                            width: screenWidth * .1,
-                            child: const Icon(Icons.heart_broken, size: 30, color: Colors.white60,),
-                          ),
-                          GestureDetector(
-                            onTap: () {
-                              if (maxHR != null) {
-                                setState(() {
-                                  _displayPercent = !_displayPercent;
-                                });
-                              }
-                            },
-                            child :SizedBox(
-                              width: screenWidth * .15,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                              child: Text(
-                                "$displayHRPercent",
-                                textAlign: TextAlign.center,
-                                style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
-                              ),)
-                            )
-                          ),
-                          SizedBox(
-                              width: screenWidth * .1,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                              child: Text(
-                                heartRateText,
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 15, color: Colors.white60, fontWeight: FontWeight.w500),
-                              ))
-                          ),
-                        ],
-                      ),
-                    ),
-                    SizedBox(
-                      height: 45,
-                      child: Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          SizedBox(
-                            width: screenWidth * .1,
-                            child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Colors.white60,),
-                          ),
-                          SizedBox(
-                            width: screenWidth * .15,
-                            child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                            child: Text(
-                              "$power",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
-                            ),)
-                          ),
-                          SizedBox(
-                              width: screenWidth * .1,
-                              child: const FittedBox(
-                                fit: BoxFit.scaleDown,
-                              child: Text(
-                                "W",
-                                textAlign: TextAlign.center,
-                                style: TextStyle(fontSize: 15, color: Colors.white60, fontWeight: FontWeight.w500),
-                              ))
-                          ),
-                        ],
-                      ),
-                    ),
-                    const SizedBox(
-                      height: 5,
-                    ),
-                  ],
+                  children: getPersonalStats()
                 ),
               )
-
           )
         ],
       );
