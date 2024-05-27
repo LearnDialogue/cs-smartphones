@@ -722,7 +722,6 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
             )
           ];
 
-          print(organizedMetrics[1]);
           int lengthList = organizedMetrics[1]!.length;
 
           for (int i = 0; i < lengthList; i++)
@@ -827,6 +826,123 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       }
     }
 
+    List<Widget> getPeerStats()
+    {
+      var screenWidth = MediaQuery.of(context).size.width;
+      try
+      {
+        List<Widget> widgetList = [
+          SizedBox(
+            height: 35,
+            child:
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  peerName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, ),
+                ),
+              ],
+            ),
+          )
+        ];
+
+        int lengthList = organizedMetrics[2]!.length;
+
+        for (int i = 0; i < lengthList; i++)
+        {
+            switch(organizedMetrics[2]?[i])
+            {
+              case "Peer Heart Rate":
+                widgetList.add(
+                  SizedBox(
+                    height: 30,
+                    child:
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        SizedBox(
+                          width: screenWidth * .1,
+                          child: const Icon(Icons.heart_broken, size: 30, color: Colors.red,),
+                        ),
+                        SizedBox(
+                            width: screenWidth * .15,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "$peerHeartRate",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 25, color: Colors.red.shade200, fontWeight: FontWeight.w600),
+                              ),)
+                        ),
+                        SizedBox(
+                            width: screenWidth * .1,
+                            child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "bpm",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 15, color: Colors.red, fontWeight: FontWeight.w500),
+                                ))
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                break;
+              case "Peer Power":
+                widgetList.add(
+                  SizedBox(
+                    height: 45,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        SizedBox(
+                          width: screenWidth * .1,
+                          child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Colors.red,),
+                        ),
+                        SizedBox(
+                            width: screenWidth * .15,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "$peerPower",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 25, color: Colors.red.shade200, fontWeight: FontWeight.w600),
+                              ),)
+                        ),
+                        SizedBox(
+                            width: screenWidth * .1,
+                            child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "W",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 15, color: Colors.red, fontWeight: FontWeight.w500),
+                                ))
+                        ),
+                      ],
+                    ),
+                  )
+                );
+                break;
+            }
+        }
+        widgetList.add(
+          const SizedBox(
+            height: 5,
+          )
+        );
+        return widgetList;
+      }
+      catch (e)
+      {
+        print("exception: ${e.toString()}");
+        return [const Center(child: CircularProgressIndicator())];
+      }
+    }
+
     @override
     Widget build(BuildContext context) {
       String twoDigits(int n) => n.toString().padLeft(2, '0');
@@ -861,7 +977,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
         widget.logger.saveTempLog();
       }
 
-      // Create UI for monitors.
+      // Create UI for monitors (both personal and for partner).
       // TODO: Only display monitor types that are connected?
       // TODO (5-20-24): Here is where the stored workout json files will be read,
       // and only specified metrics should be displayed
@@ -890,90 +1006,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
             SizedBox(
               width: screenWidth * .45,
               child: Column(
-                children: [
-                  SizedBox(
-                    height: 35,
-                    child:
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        Text(
-                          peerName,
-                          textAlign: TextAlign.center,
-                          style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, ),
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 30,
-                    child:
-                    Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        SizedBox(
-                          width: screenWidth * .1,
-                          child: const Icon(Icons.heart_broken, size: 30, color: Colors.red,),
-                        ),
-                        SizedBox(
-                          width: screenWidth * .15,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                            "$peerHeartRate",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 25, color: Colors.red.shade200, fontWeight: FontWeight.w600),
-                          ),)
-                        ),
-                        SizedBox(
-                            width: screenWidth * .1,
-                            child: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                              "bpm",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 15, color: Colors.red, fontWeight: FontWeight.w500),
-                            ))
-                        ),
-                      ],
-                    ),
-                  ),
-                  SizedBox(
-                    height: 45,
-                    child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      children: [
-                        SizedBox(
-                          width: screenWidth * .1,
-                          child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Colors.red,),
-                        ),
-                        SizedBox(
-                          width: screenWidth * .15,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                            "$peerPower",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(fontSize: 25, color: Colors.red.shade200, fontWeight: FontWeight.w600),
-                          ),)
-                        ),
-                        SizedBox(
-                            width: screenWidth * .1,
-                            child: const FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child: Text(
-                              "W",
-                              textAlign: TextAlign.center,
-                              style: TextStyle(fontSize: 15, color: Colors.red, fontWeight: FontWeight.w500),
-                            ))
-                        ),
-                      ],
-                    ),
-                  ),
-                  const SizedBox(
-                    height: 5,
-                  ),
-                ],
+                children: getPeerStats()
               ),
             )
 
