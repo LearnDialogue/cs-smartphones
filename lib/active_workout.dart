@@ -1,6 +1,8 @@
 import 'dart:async';
 import 'dart:math';
-
+import 'dart:convert';
+import 'dart:io';
+import 'package:path_provider/path_provider.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -74,6 +76,45 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
     StreamSubscription<List<int>>? subscribeStreamHR;
     StreamSubscription<List<int>>? subscribeStreamPower;
 
+    late Map<int, List<String>> organizedMetrics = {};
+    bool isLoading = true;
+    String? errorMessage;
+
+    // initializes map of int : List<String> that represents the metric UI boxes and the metrics they contain.
+    Future<void> loadMetrics() async {
+      try {
+        String jsonString = await readJsonFile();
+        print(jsonString);
+
+        Map<String, dynamic> decodedJson = json.decode(jsonString);
+
+        Map<String, List<String>> metricsMap = {};
+        decodedJson.forEach((key, value) {
+          if (value is List<dynamic>) {
+            metricsMap[key] = List<String>.from(value);
+          }
+        });
+
+        setState(() {
+          organizedMetrics = metricsMap.map((key, value) => MapEntry(int.parse(key), value));
+          isLoading = false;
+        });
+      } catch (e) {
+        setState(() {
+          errorMessage = e.toString();
+          print('error: ${e.toString()}');
+          isLoading = false;
+        });
+      }
+    }
+
+    // opens file and gets string that represents json object stored
+    Future<String> readJsonFile() async {
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/pageOrder/${widget.exerciseType}.json');
+      return await file.readAsString();
+    }
+
     @override
     void initState(){
       super.initState();
@@ -91,6 +132,9 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
           .listen(_onPositionUpdate);
       startTimer();
       debugPrint('Exercise Type = ${widget.exerciseType}');
+
+      // initialize map of UI boxes to the metrics they contain, so we can populate appropriately.
+      loadMetrics();
 
       //Read data from connected BLE sensors
       if (deviceList != null && pauseWorkout) {
@@ -365,7 +409,287 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       return totalDistance;
     }
 
+    List<Widget> getFirstBoxWidgets()
+    {
+      try {
+        List<Widget> widgetList = [];
+        int lengthList = organizedMetrics[0]!.length;
 
+        String twoDigits(int n) => n.toString().padLeft(2, '0');
+        String? hours, minutes, seconds;
+        hours = twoDigits(duration.inHours.remainder(60));
+        minutes = twoDigits(duration.inMinutes.remainder(60));
+        seconds = twoDigits(duration.inSeconds.remainder(60));
+
+        var screenWidth = MediaQuery
+            .of(context)
+            .size
+            .width;
+        var screenHeight = MediaQuery
+            .of(context)
+            .size
+            .height;
+
+        final double pace = _changeDistance
+            ? ((duration.inSeconds / _calculateTotalDistance()) * 1000 / 60)
+            : ((duration.inSeconds / _calculateTotalDistance()) * 1609 / 60);
+
+        final double distance = _changeDistance
+            ? (_calculateTotalDistance() / 1000)
+            : (_calculateTotalDistance() / 1609);
+
+        final double speedDisplay = _changeDistance
+            ? speed * 1.60934
+            : speed;
+
+        final int? maxHR = int.tryParse(widget.settings.maxHR);
+        final int? displayHRPercent = _displayPercent
+            ? ((heartrate! / maxHR!) * 100).round()
+            : heartrate;
+        final String heartRateText = _displayPercent ? '%' : 'bpm';
+
+        int logInterval = int.parse(seconds) % 5;
+        if (timer!.isActive && logInterval == 0) {
+          widget.logger.saveTempLog();
+        }
+
+        for (int i = 0; i < lengthList; i++) {
+          switch (organizedMetrics[0]?[i]) {
+            case "Duration":
+              widgetList.add(
+                  ElevatedButton(
+                      onPressed: () {
+
+                      },
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                        backgroundColor: MaterialStateProperty.all(
+                            Colors.black),
+                        overlayColor: MaterialStateProperty.all(
+                            Colors.transparent),
+                        shape: MaterialStateProperty.all(const CircleBorder()),
+                      ),
+                      child: SizedBox(
+                          height: screenHeight * 0.12,
+                          width: (screenWidth * 0.95) / 4,
+                          child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child:
+                              Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Duration',
+                                    style: TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                  ),
+                                  Text(
+                                    '$minutes:$seconds',
+                                    style: const TextStyle(fontSize: 30,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.45),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                  ),
+                                  const Text(
+                                    'min:s',
+                                    style: TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.3),
+                                    textAlign: TextAlign.center,
+                                    maxLines: 1,
+                                  ),
+                                ],
+                              )
+                          )
+                      )));
+              break;
+            case "Distance":
+              widgetList.add(
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _changeDistance = !_changeDistance;
+                      });
+                    },
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all(
+                          const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                      backgroundColor: MaterialStateProperty.all(Colors.black),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent),
+                      shape: MaterialStateProperty.all(const CircleBorder()),
+                    ),
+                    child: SizedBox(
+                        height: screenHeight * 0.12,
+                        width: (screenWidth * 0.95) / 4,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Distance',
+                                style: TextStyle(fontSize: 15,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w400),
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                _calculateTotalDistance() < 15 ? "-" : distance
+                                    .toStringAsFixed(2),
+                                style: const TextStyle(fontSize: 30,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.45),
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                distanceUnits,
+                                style: const TextStyle(fontSize: 15,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.3),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                    ),
+                  )
+              );
+              break;
+            case "Speed":
+              widgetList.add(
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _changeDistance = !_changeDistance;
+                        });
+                      },
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                        backgroundColor: MaterialStateProperty.all(
+                            Colors.black),
+                        overlayColor: MaterialStateProperty.all(
+                            Colors.transparent),
+                        shape: MaterialStateProperty.all(const CircleBorder()),
+                      ),
+                      child: SizedBox(
+                          height: screenHeight * 0.12,
+                          width: (screenWidth * 0.95) / 4,
+                          child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Speed',
+                                    style: TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    //_calculateTotalDistance() < 15 ? "-" : (distance / (duration.inSeconds / 3600)).toStringAsFixed(1),
+                                    _calculateTotalDistance() < 15
+                                        ? "-"
+                                        : (speedDisplay).toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 30,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.45),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    '$distanceUnits/hour',
+                                    style: const TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.3),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              )
+                          )
+                      )
+                  )
+              );
+              break;
+            case "Pace":
+              widgetList.add(
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _changeDistance = !_changeDistance;
+                        });
+                      },
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                        backgroundColor: MaterialStateProperty.all(
+                            Colors.black),
+                        overlayColor: MaterialStateProperty.all(
+                            Colors.transparent),
+                        shape: MaterialStateProperty.all(const CircleBorder()),
+                      ),
+                      child: SizedBox(
+                          height: screenHeight * 0.12,
+                          width: (screenWidth * 0.95) / 4,
+                          child: FittedBox(
+                              fit: BoxFit.scaleDown,
+
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Pace',
+                                    style: TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    _calculateTotalDistance() < 15 ? "-" : pace
+                                        .toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 30,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.45),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    'min/$distanceUnits',
+                                    style: const TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.3),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              )
+                          )
+                      )
+                  )
+              );
+              break;
+          }
+        }
+        return widgetList;
+      }
+      catch (e)
+      {
+        print('exception: ${e.toString()}');
+        return [const Center(child: CircularProgressIndicator())];
+      }
+    }
 
     @override
     Widget build(BuildContext context) {
@@ -671,175 +995,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                           //crossAxisAlignment: CrossAxisAlignment.start,
                           children: <Widget>[
                             Row(
-                                children: <Widget>[
-                                  /// Duration
-                                  ElevatedButton(
-                                      onPressed: () {
-
-                                      },
-                                      style: ButtonStyle(
-                                        padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                                        backgroundColor: MaterialStateProperty.all(Colors.black) ,
-                                        overlayColor: MaterialStateProperty.all(Colors.transparent),
-                                        shape: MaterialStateProperty.all(const CircleBorder()),
-                                      ),
-                                      child: SizedBox(
-                                          height: screenHeight * 0.12,
-                                          width: (screenWidth * 0.95) / 4,
-                                          child: FittedBox(
-                                            fit: BoxFit.scaleDown,
-                                            child:
-                                              Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  const Text(
-                                                    'Duration',
-                                                    style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                                    textAlign: TextAlign.center,
-                                                    maxLines: 1,
-                                                  ),
-                                                  Text(
-                                                    '$minutes:$seconds',
-                                                    style: const TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.w600, height: 1.45),
-                                                    textAlign: TextAlign.center,
-                                                    maxLines: 1,
-                                                  ),
-                                                  const Text(
-                                                    'min:s',
-                                                    style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                                    textAlign: TextAlign.center,
-                                                    maxLines: 1,
-                                                  ),
-                                                ],
-                                              )
-                                          )
-                                      )),
-                                  /// Distance
-                                  ElevatedButton(
-                                    onPressed: () {
-                                      setState(() {
-                                        _changeDistance = !_changeDistance;
-                                      });
-                                    },
-                                    style: ButtonStyle(
-                                      padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                                      backgroundColor: MaterialStateProperty.all(Colors.black) ,
-                                      overlayColor: MaterialStateProperty.all(Colors.transparent),
-                                      shape: MaterialStateProperty.all(const CircleBorder()),
-                                    ),
-                                    child: SizedBox(
-                                      height: screenHeight * 0.12,
-                                      width: (screenWidth * 0.95) / 4,
-                                      child: FittedBox(
-                                        fit: BoxFit.scaleDown,
-                                        child: Column(
-                                          mainAxisAlignment: MainAxisAlignment.start,
-                                          children: [
-                                            const Text(
-                                              'Distance',
-                                              style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              _calculateTotalDistance() < 15 ? "-" : distance.toStringAsFixed(2),
-                                              style: const TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.w600, height: 1.45),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                            Text(
-                                              distanceUnits,
-                                              style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                              textAlign: TextAlign.center,
-                                            ),
-                                          ],
-                                        ),
-                                        )
-                                    ),
-                                  ),
-                                  /// Speed
-                                  ElevatedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _changeDistance = !_changeDistance;
-                                        });
-                                      },
-                                      style: ButtonStyle(
-                                        padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                                        backgroundColor: MaterialStateProperty.all(Colors.black) ,
-                                        overlayColor: MaterialStateProperty.all(Colors.transparent),
-                                        shape: MaterialStateProperty.all(const CircleBorder()),
-                                      ),
-                                      child: SizedBox(
-                                          height: screenHeight * 0.12,
-                                          width: (screenWidth * 0.95) / 4,
-                                          child: FittedBox(
-                                              fit: BoxFit.scaleDown,
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.start,
-                                                children: [
-                                                  const Text(
-                                                    'Speed',
-                                                    style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  Text(
-                                                    //_calculateTotalDistance() < 15 ? "-" : (distance / (duration.inSeconds / 3600)).toStringAsFixed(1),
-                                                    _calculateTotalDistance() < 15 ? "-" : (speedDisplay).toStringAsFixed(1),
-                                                    style: const TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.w600, height: 1.45),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  Text(
-                                                    '$distanceUnits/hour',
-                                                    style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ],
-                                              )
-                                          )
-                                      )
-                                  ),
-                                  /// Pace
-                                  ElevatedButton(
-                                      onPressed: () {
-                                        setState(() {
-                                          _changeDistance = !_changeDistance;
-                                        });
-                                      },
-                                      style: ButtonStyle(
-                                        padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                                        backgroundColor: MaterialStateProperty.all(Colors.black) ,
-                                        overlayColor: MaterialStateProperty.all(Colors.transparent),
-                                        shape: MaterialStateProperty.all(const CircleBorder()),
-                                      ),
-                                      child: SizedBox(
-                                          height: screenHeight * 0.12,
-                                          width: (screenWidth * 0.95) / 4,
-                                          child: FittedBox(
-                                              fit: BoxFit.scaleDown,
-
-                                              child: Column(
-                                                mainAxisAlignment: MainAxisAlignment.center,
-                                                children: [
-                                                  const Text(
-                                                    'Pace',
-                                                    style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  Text(
-                                                    _calculateTotalDistance() < 15 ? "-" : pace.toStringAsFixed(1),
-                                                    style: const TextStyle(fontSize: 30, color: Colors.white, fontWeight: FontWeight.w600, height: 1.45),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                  Text(
-                                                    'min/$distanceUnits',
-                                                    style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                                    textAlign: TextAlign.center,
-                                                  ),
-                                                ],
-                                              )
-                                          )
-                                      )
-                                  )
-                                ]
+                                children: getFirstBoxWidgets()
                             ),
                           ]
                       ),
@@ -906,5 +1062,12 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
           )
         )
       );
+    }
+
+    // used for debugging the organized metrics map initialization.
+    void printOrganizedMetrics(Map<int, List<String>> organizedMetrics) {
+      organizedMetrics.forEach((box, metrics) {
+        print('Box $box: ${metrics.join(', ')}');
+      });
     }
 }

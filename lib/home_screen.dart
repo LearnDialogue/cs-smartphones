@@ -205,18 +205,22 @@ class _HomeScreenState extends State<HomeScreen> {
     // This is a map from index of metric (what order it
     // comes in) and the name of the metric;
 
+    // I used the smartwatch as a template here, but had to
+    // change one thing. In the watch, I just had the key as a single
+    // integer that represented the order in the pages that this
+    // metric lived at. Here, the key represents what box of metrics
+    // this metric belongs to in the ui, and the list is the ordered
+    // list of metrics in that box.
+
     if (!pageOrderDir.existsSync())
     {
       try {
         // default outdoor run
         File outRunFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Run.json").create(recursive: true);
-        Map<String, String> strKeys = {
-          "0": "Heart Rate",
-          "1": "Peer Heart Rate",
-          "2": "Heart Rate Zone",
-          "3": "Time",
-          "4": "Speed",
-          "5": "Distance",
+        Map<String, List<String>> strKeys = {
+          "0": ["Duration", "Distance", "Speed", "Pace"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"],
         };
         String jsonString = jsonEncode(strKeys);
         await outRunFile.writeAsString(jsonString);
@@ -224,11 +228,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // default indoor run
         File inRunFile = await File("$appDocumentsDirectory/pageOrder/Indoor Run.json").create(recursive: true);
         strKeys = {
-          "0": "Heart Rate",
-          "1": "Peer Heart Rate",
-          "2": "Heart Rate Zone",
-          "3": "Time",
-          "4": "Speed",
+          "0": ["Duration"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"]
         };
         jsonString = jsonEncode(strKeys);
         await inRunFile.writeAsString(jsonString);
@@ -236,12 +238,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // default outdoor walk
         File outWalkFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Walk.json").create(recursive: true);
         strKeys = {
-          "0": "Heart Rate",
-          "1": "Peer Heart Rate",
-          "2": "Heart Rate Zone",
-          "3": "Time",
-          "4": "Speed",
-          "5": "Distance"
+          "0": ["Duration", "Distance", "Speed", "Pace"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"],
         };
         jsonString = jsonEncode(strKeys);
         await outWalkFile.writeAsString(jsonString);
@@ -249,11 +248,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // default indoor walk
         File inWalkFile = await File("$appDocumentsDirectory/pageOrder/Indoor Walk.json").create(recursive: true);
         strKeys = {
-          "0": "Heart Rate",
-          "1": "Peer Heart Rate",
-          "2": "Heart Rate Zone",
-          "3": "Time",
-          "4": "Speed",
+          "0": ["Duration"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"]
         };
         jsonString = jsonEncode(strKeys);
         await inWalkFile.writeAsString(jsonString);
@@ -261,13 +258,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // default outdoor bike
         File outBikeFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Biking.json").create(recursive: true);
         strKeys = {
-          "0": "Heart Rate",
-          "1": "Peer Heart Rate",
-          "2": "Heart Rate Zone",
-          "3": "Time",
-          "4": "Speed",
-          "5": "Distance",
-          "6": "Power"
+          "0": ["Duration", "Distance", "Speed", "Pace"],
+          "1": ["Heart Rate", "Power"],
+          "2": ["Peer Heart Rate", "Peer Power"],
         };
         jsonString = jsonEncode(strKeys);
         await outBikeFile.writeAsString(jsonString);
@@ -275,12 +268,9 @@ class _HomeScreenState extends State<HomeScreen> {
         // indoor bike
         File inBikeFile = await File("$appDocumentsDirectory/pageOrder/Indoor Biking.json").create(recursive: true);
         strKeys = {
-          "0": "Heart Rate",
-          "1": "Peer Heart Rate",
-          "2": "Heart Rate Zone",
-          "3": "Time",
-          "4": "Speed",
-          "5": "Power"
+          "0": ["Duration"],
+          "1": ["Heart Rate", "Power"],
+          "2": ["Peer Heart Rate", "Peer Power"],
         };
         jsonString = jsonEncode(strKeys);
         await inBikeFile.writeAsString(jsonString);
