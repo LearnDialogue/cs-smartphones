@@ -80,6 +80,11 @@ class _ExerciseTypeState extends State<ExerciseType> {
     });
   }
 
+  editWorkoutType(String workoutType)
+  {
+
+  }
+
   Future<List<Widget>> getWorkoutTypes(BuildContext context) async {
     String appDocumentsDirectory = (await getApplicationDocumentsDirectory()).path;
     Directory pageOrderDir = Directory("$appDocumentsDirectory/pageOrder");
@@ -94,16 +99,16 @@ class _ExerciseTypeState extends State<ExerciseType> {
 
         final String workoutType = fileName.substring(0, fileName.lastIndexOf(".json"));
         String type = '';
-        Icon workoutIcon = const Icon(Icons.directions_walk_outlined, size: 50, color: Color(0xFF71F1B5));
+        Icon workoutIcon = const Icon(Icons.directions_walk_outlined, size: 40, color: Color(0xFF71F1B5));
         Color workoutColor = _outRunColor;
 
           switch (workoutType) {
           case "Outdoor Run":
-            workoutIcon = const Icon(Icons.directions_run_outlined, size: 50, color: Color(0xFF71F1B5));
+            workoutIcon = const Icon(Icons.directions_run_outlined, size: 40, color: Color(0xFF71F1B5));
             workoutColor = _outRunColor;
             break;
             case "Indoor Run":
-            workoutIcon = const Icon(Icons.directions_run_outlined, size: 50, color: Color(0xFF71F1B5));
+            workoutIcon = const Icon(Icons.directions_run_outlined, size: 40, color: Color(0xFF71F1B5));
             workoutColor = _inRunColor;
             break;
           case "Outdoor Walk":
@@ -113,11 +118,11 @@ class _ExerciseTypeState extends State<ExerciseType> {
             workoutColor = _inWalkColor;
             break;
           case "Outdoor Biking":
-            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 50, color: Color(0xFF71F1B5));
+            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 30, color: Color(0xFF71F1B5));
             workoutColor = _outCycleColor;
             break;
           case "Indoor Biking":
-            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 50, color: Color(0xFF71F1B5));
+            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 30, color: Color(0xFF71F1B5));
             workoutColor = _inCycleColor;
             break;
         }
@@ -142,24 +147,36 @@ class _ExerciseTypeState extends State<ExerciseType> {
               // I might be wrong though.
               widget.callBack(workoutType);
             },
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Wrap(
-                spacing: widget.dialogWidth * .25,
-                alignment: WrapAlignment.spaceEvenly,
-                children: [
-                  workoutIcon,
-                  Text(
-                    workoutType,
-                    style: GoogleFonts.openSans(
-                      color: const Color(0xFFF1F1F1),
-                      fontSize: 25,
-                      fontWeight: FontWeight.w600,
-                      height: 1.7,
+            child: Row(
+              mainAxisAlignment: MainAxisAlignment.spaceBetween,
+              children: [
+                workoutIcon,
+                Expanded(
+                  child: Align(
+                    alignment: Alignment.centerRight,
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        Text(
+                          workoutType,
+                          style: GoogleFonts.openSans(
+                            color: const Color(0xFFF1F1F1),
+                            fontSize: 20,
+                            fontWeight: FontWeight.w600,
+                            height: 1.7,
+                          ),
+                        ),
+                        IconButton(
+                          icon: const Icon(Icons.edit, size: 25, color: Color(0xFF71F1B5)),
+                          onPressed: () {
+                            editWorkoutType(workoutType);
+                          },
+                        ),
+                      ],
                     ),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
         );
