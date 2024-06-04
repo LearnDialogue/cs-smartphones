@@ -49,6 +49,7 @@ class BluetoothManager {
     stateSubscription?.cancel();
     stateSubscription =
         nearbyService.stateChangedSubscription(callback: (devicesList) {
+          print ("made it here inside startStateSubscription");
           devicesList.forEach((element) {
             print(
                 " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");

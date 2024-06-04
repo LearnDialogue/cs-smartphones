@@ -409,6 +409,25 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       return totalDistance;
     }
 
+    int getHRZone() {
+      final int? maxHR = int.tryParse(widget.settings.maxHR);
+      double heartRatePerc = (heartrate! / maxHR!) * 100;
+
+      if (heartRatePerc >= 0 && heartRatePerc <= 49) {
+        return 1;
+      } else if (heartRatePerc >= 50 && heartRatePerc <= 59) {
+        return 1;
+      } else if (heartRatePerc >= 60 && heartRatePerc <= 69) {
+        return 2;
+      } else if (heartRatePerc >= 70 && heartRatePerc <= 79) {
+        return 3;
+      } else if (heartRatePerc >= 80 && heartRatePerc <= 89) {
+        return 4;
+      } else {
+        return 5;
+      }
+    }
+
     // This uses the organizedMetrics map that describes the order of the metrics in each metrics UI box to
     // build widgets and return them as a list.
     List<Widget> getFirstBoxWidgets()
@@ -467,10 +486,11 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                         padding: MaterialStateProperty.all(
                             const EdgeInsets.fromLTRB(0, 0, 0, 0)),
                         backgroundColor: MaterialStateProperty.all(
-                            Colors.black),
+                            Color(0xFF4F45C2)),
                         overlayColor: MaterialStateProperty.all(
                             Colors.transparent),
                         shape: MaterialStateProperty.all(const CircleBorder()),
+                        elevation: MaterialStateProperty.all(0),
                       ),
                       child: SizedBox(
                           height: screenHeight * 0.12,
@@ -523,10 +543,11 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                     style: ButtonStyle(
                       padding: MaterialStateProperty.all(
                           const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                      backgroundColor: MaterialStateProperty.all(Colors.black),
+                      backgroundColor: MaterialStateProperty.all(const Color(0xFF4F45C2)),
                       overlayColor: MaterialStateProperty.all(
                           Colors.transparent),
                       shape: MaterialStateProperty.all(const CircleBorder()),
+                      elevation: MaterialStateProperty.all(0),
                     ),
                     child: SizedBox(
                         height: screenHeight * 0.12,
@@ -579,10 +600,11 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                         padding: MaterialStateProperty.all(
                             const EdgeInsets.fromLTRB(0, 0, 0, 0)),
                         backgroundColor: MaterialStateProperty.all(
-                            Colors.black),
+                            const Color(0xFF4F45C2)),
                         overlayColor: MaterialStateProperty.all(
                             Colors.transparent),
                         shape: MaterialStateProperty.all(const CircleBorder()),
+                        elevation: MaterialStateProperty.all(0),
                       ),
                       child: SizedBox(
                           height: screenHeight * 0.12,
@@ -637,10 +659,11 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                         padding: MaterialStateProperty.all(
                             const EdgeInsets.fromLTRB(0, 0, 0, 0)),
                         backgroundColor: MaterialStateProperty.all(
-                            Colors.black),
+                            Color(0xFF4F45C2)),
                         overlayColor: MaterialStateProperty.all(
                             Colors.transparent),
                         shape: MaterialStateProperty.all(const CircleBorder()),
+                        elevation: MaterialStateProperty.all(0),
                       ),
                       child: SizedBox(
                           height: screenHeight * 0.12,
@@ -682,6 +705,55 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                   )
               );
               break;
+            case "Heart Rate Zone":
+              widgetList.add(
+                ElevatedButton(
+                    onPressed: () {
+
+                    },
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all(
+                          const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                      backgroundColor: MaterialStateProperty.all(
+                          const Color(0xFF4F45C2)),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent),
+                      shape: MaterialStateProperty.all(const CircleBorder()),
+                      elevation: MaterialStateProperty.all(0),
+                    ),
+                    child: SizedBox(
+                        height: screenHeight * 0.12,
+                        width: (screenWidth * 0.95) / 4,
+                        child: FittedBox(
+                            fit: BoxFit.scaleDown,
+
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Zone',
+                                  style: TextStyle(fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w400),
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  getHRZone()
+                                      .toStringAsFixed(0),
+                                  style: const TextStyle(fontSize: 30,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.45),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            )
+                        )
+                    )
+                )
+              );
+
+
           }
         }
         return widgetList;
@@ -738,7 +810,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                         children: [
                           SizedBox(
                             width: screenWidth * .1,
-                            child: const Icon(Icons.heart_broken, size: 30, color: Colors.white60,),
+                            child: const Icon(Icons.heart_broken, size: 30, color: Color(0xFF71F1B5),),
                           ),
                           GestureDetector(
                               onTap: () {
@@ -766,7 +838,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                                   child: Text(
                                     heartRateText,
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 15, color: Colors.white60, fontWeight: FontWeight.w500),
+                                    style: const TextStyle(fontSize: 15, color: Color(0xFF71F1B5), fontWeight: FontWeight.w500),
                                   ))
                           ),
                         ],
@@ -783,7 +855,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                         children: [
                           SizedBox(
                             width: screenWidth * .1,
-                            child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Colors.white60,),
+                            child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Color(0xFF71F1B5),),
                           ),
                           SizedBox(
                               width: screenWidth * .15,
@@ -802,7 +874,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                                   child: Text(
                                     "W",
                                     textAlign: TextAlign.center,
-                                    style: TextStyle(fontSize: 15, color: Colors.white60, fontWeight: FontWeight.w500),
+                                    style: TextStyle(fontSize: 15, color: Color(0xFF71F1B5), fontWeight: FontWeight.w500),
                                   ))
                           ),
                         ],
@@ -864,7 +936,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                       children: [
                         SizedBox(
                           width: screenWidth * .1,
-                          child: const Icon(Icons.heart_broken, size: 30, color: Colors.red,),
+                          child: const Icon(Icons.heart_broken, size: 30, color: Color(0xFF71F1B5),),
                         ),
                         SizedBox(
                             width: screenWidth * .15,
@@ -900,7 +972,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                       children: [
                         SizedBox(
                           width: screenWidth * .1,
-                          child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Colors.red,),
+                          child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Color(0xFF71F1B5),),
                         ),
                         SizedBox(
                             width: screenWidth * .15,
@@ -979,14 +1051,12 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
 
       // Create UI for monitors (both personal and for partner).
       // TODO: Only display monitor types that are connected?
-      // TODO (5-20-24): Here is where the stored workout json files will be read,
-      // and only specified metrics should be displayed
       var statsRow = Row(
         mainAxisAlignment: MainAxisAlignment.spaceEvenly,
         children: [
           Card(
           shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-          color: Colors.black,
+          color: Color(0xFF4F45C2),
           child:
               SizedBox(
                 width: screenWidth * .45,
@@ -1001,7 +1071,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       if (BluetoothManager.instance.connectedDevices.isNotEmpty) {
         statsRow.children.add(Card(
             shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-            color: Colors.black,
+            color: const Color(0xFF4F45C2),
             child:
             SizedBox(
               width: screenWidth * .45,
@@ -1027,9 +1097,87 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
           child:
           Column(
               children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
+                  child:
+                    SizedBox(
+                      height: screenHeight * 0.12,
+                      width: screenWidth * 0.95,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              //crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Row(
+                                    children: [
+                                      const SizedBox(width: 5),
+                                      SizedBox(
+                                        height: 50,
+                                        child:
+                                          Text(
+                                            widget.exerciseType,
+                                            style: const TextStyle(fontSize: 40,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w400),
+                                          )
+                                      ),
+                                      const SizedBox(width: 1),
+                                      ElevatedButton(
+                                          onPressed: () {
+
+                                          },
+                                          style: ButtonStyle(
+                                            padding: MaterialStateProperty.all(
+                                                const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                                            backgroundColor: MaterialStateProperty.all(
+                                                const Color(0xFF4F45C2)),
+                                            overlayColor: MaterialStateProperty.all(
+                                                Colors.transparent),
+                                            shape: MaterialStateProperty.all(const CircleBorder()),
+                                            elevation: MaterialStateProperty.all(0),
+                                          ),
+                                          child: SizedBox(
+                                              height: screenHeight * 0.12,
+                                              width: (screenWidth * 0.95) / 4,
+                                              child: FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  child:
+                                                  Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      const Text(
+                                                        'Duration',
+                                                        style: TextStyle(fontSize: 20,
+                                                            color: Colors.white,
+                                                            fontWeight: FontWeight.w400),
+                                                        textAlign: TextAlign.center,
+                                                        maxLines: 1,
+                                                      ),
+                                                      Text(
+                                                        '$minutes:$seconds',
+                                                        style: const TextStyle(fontSize: 30,
+                                                            color: Colors.white,
+                                                            fontWeight: FontWeight.w600,
+                                                            height: 1.45),
+                                                        textAlign: TextAlign.center,
+                                                        maxLines: 1,
+                                                      ),
+                                                    ],
+                                                  )
+                                              )
+                                          )),
+                                    ],
+                                ),
+                              ]
+                          ),
+                        )
+                  ),
+                ),
+                SizedBox(height: screenHeight * .01),
                 /// Map
                 SizedBox(
-                  height: screenHeight * 0.52,
+                  height: screenHeight * 0.45,
                   width: screenWidth,
                   child:
                   _initialPosition == null ? Center(child:Text('loading map..', style: TextStyle(fontFamily: 'Avenir-Medium', color: Colors.grey[400]),),) :
@@ -1049,9 +1197,9 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                       Padding(
                           padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
                           child: FloatingActionButton(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Colors.transparent,
                             onPressed: _currentLocation,
-                            child: Icon(Icons.location_on, color: Colors.black),
+                            child: const Icon(Icons.location_on, color: Color(0xFF4F45C2)),
                           )
                       ),
                     ],
@@ -1065,7 +1213,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                     height: screenHeight * 0.12,
                     width: screenWidth * 0.95,
                     child: DecoratedBox(
-                      decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(20.0)),
+                      decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
                       child: Row(
                           mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                           //crossAxisAlignment: CrossAxisAlignment.start,
@@ -1089,7 +1237,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                             overlayColor: MaterialStateProperty.all(Colors.transparent),
                             //padding: MaterialStateProperty.all(const EdgeInsets.all(10)),
                             elevation: MaterialStateProperty.all(0.0),
-                            backgroundColor: MaterialStateProperty.all(Colors.transparent.withOpacity(0.0))
+                            backgroundColor: MaterialStateProperty.all(Colors.transparent.withOpacity(0.0)),
                         ),
                         onPressed: () {
                           setState(() {
@@ -1121,11 +1269,11 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                         },
                         child:
                         CircleAvatar(
-                          radius: screenHeight * .06,
-                          backgroundColor: Colors.orange,
+                          radius: screenHeight * .03,
+                          backgroundColor: const Color(0xFF4F45C2),
                           child: pauseWorkout ?
-                          Icon(Icons.pause, size: screenHeight * .1, color: Colors.white) :
-                          Icon(Icons.play_arrow, size: screenHeight * .11, color: Colors.white),
+                          Icon(Icons.pause, size: screenHeight * .05, color: Colors.white) :
+                          Icon(Icons.play_arrow, size: screenHeight * .055, color: Colors.white),
                         )
                     ),
                     Visibility(

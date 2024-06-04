@@ -31,12 +31,12 @@ class ExerciseType extends StatefulWidget {
 }
 
 class _ExerciseTypeState extends State<ExerciseType> {
-  Color _inWalkColor = Color.fromRGBO(90, 90, 90, 0.5);
-  Color _outWalkColor =Color.fromRGBO(90, 90, 90, 0.5);
-  Color _outRunColor = Color.fromRGBO(90, 90, 90, 0.5);
-  Color _inRunColor = Color.fromRGBO(90, 90, 90, 0.5);
-  Color _outCycleColor = Color.fromRGBO(90, 90, 90, 0.5);
-  Color _inCycleColor = Color.fromRGBO(90, 90, 90, 0.5);
+  Color _inWalkColor = const Color.fromRGBO(90, 90, 90, 0.5);
+  Color _outWalkColor = const Color.fromRGBO(90, 90, 90, 0.5);
+  Color _outRunColor = const Color.fromRGBO(90, 90, 90, 0.5);
+  Color _inRunColor = const Color.fromRGBO(90, 90, 90, 0.5);
+  Color _outCycleColor = const Color.fromRGBO(90, 90, 90, 0.5);
+  Color _inCycleColor = const Color.fromRGBO(90, 90, 90, 0.5);
 
   @override
   void initState() {
@@ -46,36 +46,36 @@ class _ExerciseTypeState extends State<ExerciseType> {
 
   void _setColor(String type) {
     setState(() {
-      _outWalkColor = Color.fromRGBO(90, 90, 90, 0.5);
-      _inWalkColor = Color.fromRGBO(90, 90, 90, 0.5);
-      _outRunColor = Color.fromRGBO(90, 90, 90, 0.5);
-      _inRunColor = Color.fromRGBO(90, 90, 90, 0.5);
-      _outCycleColor = Color.fromRGBO(90, 90, 90, 0.5);
-      _inCycleColor = Color.fromRGBO(90, 90, 90, 0.5);
+      _outWalkColor = const Color.fromRGBO(90, 90, 90, 0.5);
+      _inWalkColor = const Color.fromRGBO(90, 90, 90, 0.5);
+      _outRunColor = const Color.fromRGBO(90, 90, 90, 0.5);
+      _inRunColor = const Color.fromRGBO(90, 90, 90, 0.5);
+      _outCycleColor = const Color.fromRGBO(90, 90, 90, 0.5);
+      _inCycleColor = const Color.fromRGBO(90, 90, 90, 0.5);
 
       if (type == 'Outdoor Walk')
       {
-        _outWalkColor = Colors.green;
+        _outWalkColor = const Color(0xFF4F45C2);
       }
       if (type == 'Indoor Walk')
       {
-        _inWalkColor = Colors.green;
+        _inWalkColor = const Color(0xFF4F45C2);
       }
       else if (type == 'Outdoor Run')
       {
-        _outRunColor = Colors.green;
+        _outRunColor = const Color(0xFF4F45C2);
       }
       else if (type == 'Indoor Run')
       {
-        _inRunColor = Colors.green;
+        _inRunColor = const Color(0xFF4F45C2);
       }
       else if (type == 'Outdoor Biking')
       {
-        _outCycleColor = Colors.green;
+        _outCycleColor = const Color(0xFF4F45C2);
       }
       else if (type == 'Indoor Biking')
       {
-        _inCycleColor = Colors.green;
+        _inCycleColor = const Color(0xFF4F45C2);
       }
     });
   }
@@ -94,16 +94,16 @@ class _ExerciseTypeState extends State<ExerciseType> {
 
         final String workoutType = fileName.substring(0, fileName.lastIndexOf(".json"));
         String type = '';
-        Icon workoutIcon = const Icon(Icons.directions_walk_outlined, size: 50);
+        Icon workoutIcon = const Icon(Icons.directions_walk_outlined, size: 50, color: Color(0xFF71F1B5));
         Color workoutColor = _outRunColor;
 
           switch (workoutType) {
           case "Outdoor Run":
-            workoutIcon = const Icon(Icons.directions_run_outlined, size: 50);
+            workoutIcon = const Icon(Icons.directions_run_outlined, size: 50, color: Color(0xFF71F1B5));
             workoutColor = _outRunColor;
             break;
             case "Indoor Run":
-            workoutIcon = const Icon(Icons.directions_run_outlined, size: 50);
+            workoutIcon = const Icon(Icons.directions_run_outlined, size: 50, color: Color(0xFF71F1B5));
             workoutColor = _inRunColor;
             break;
           case "Outdoor Walk":
@@ -113,11 +113,11 @@ class _ExerciseTypeState extends State<ExerciseType> {
             workoutColor = _inWalkColor;
             break;
           case "Outdoor Biking":
-            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 50);
+            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 50, color: Color(0xFF71F1B5));
             workoutColor = _outCycleColor;
             break;
           case "Indoor Biking":
-            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 50);
+            workoutIcon = const Icon(Icons.directions_bike_outlined, size: 50, color: Color(0xFF71F1B5));
             workoutColor = _inCycleColor;
             break;
         }
@@ -152,6 +152,7 @@ class _ExerciseTypeState extends State<ExerciseType> {
                   Text(
                     workoutType,
                     style: GoogleFonts.openSans(
+                      color: const Color(0xFFF1F1F1),
                       fontSize: 25,
                       fontWeight: FontWeight.w600,
                       height: 1.7,

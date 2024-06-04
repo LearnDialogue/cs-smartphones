@@ -218,7 +218,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // default outdoor run
         File outRunFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Run.json").create(recursive: true);
         Map<String, List<String>> strKeys = {
-          "0": ["Duration", "Distance", "Speed", "Pace"],
+          "0": ["Distance", "Speed", "Pace", "Heart Rate Zone"],
           "1": ["Heart Rate"],
           "2": ["Peer Heart Rate"],
         };
@@ -313,6 +313,7 @@ class _HomeScreenState extends State<HomeScreen> {
       _showSetupDialog();
     });
 
+    createDefaultWorkouts();
   }
 
   // Restore saved settings from local database
@@ -662,12 +663,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: MaterialStateProperty.all(
                     const EdgeInsets.all(10)),
                 backgroundColor: MaterialStateProperty.all(
-                    Colors.orange), // <-- Button color
+                    const Color(0xFF4F45C2)), // <-- Button color
               ),
               onPressed: () {
                 showExerciseTypeDialog();
               },
-              child: Icon(_getIcon(), size: 30)),
+              child: Icon(_getIcon(), size: 30, color: const Color(0xFF71F1B5))),
         ),
         // Connect to sensors button
         Padding(
@@ -680,13 +681,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: MaterialStateProperty.all(
                     const EdgeInsets.all(10)),
                 backgroundColor: MaterialStateProperty.all(
-                    Colors.orange), // <-- Button color
+                    const Color(0xFF4F45C2)), // <-- Button color
               ),
               onPressed: () async {
                 showConnectMonitorsDialog();
               },
               child: const Icon(Icons.bluetooth_connected,
-                  size: 30)),
+                  size: 30, color: Color(0xFF71F1B5))),
         ),
         // Connect to partners button
         Padding(
@@ -699,12 +700,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: MaterialStateProperty.all(
                     const EdgeInsets.all(10)),
                 backgroundColor: MaterialStateProperty.all(
-                    Colors.orange), // <-- Button color
+                    const Color(0xFF4F45C2)), // <-- Button color
               ),
               onPressed: () async {
                 showConnectPartnersDialog();
               },
-              child: const Icon(Icons.people_alt_sharp)),
+              child: const Icon(Icons.people_alt_sharp, color: Color(0xFF71F1B5))),
         )
       ]);
   }
@@ -744,7 +745,7 @@ class _HomeScreenState extends State<HomeScreen> {
         link: layerLink,
         child: Column(children: [
           Container(
-            color: Colors.green,
+            color: const Color(0xFF4F45C2),
             width: screenWidth,
             height: screenHeight * 0.70, // map takes 70% of screen
             child: Container(
@@ -776,7 +777,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Padding(
                             padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
                             child: FloatingActionButton(
-                              backgroundColor: Colors.white,
+                              backgroundColor: Colors.transparent,
                               onPressed: _currentLocation,
                               child:
                                   Icon(Icons.location_on, color: Colors.black),
@@ -825,7 +826,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     style: ButtonStyle(
                         backgroundColor:
-                            MaterialStateProperty.all(Colors.green),
+                            MaterialStateProperty.all(const Color(0xFF4F45C2)),
                         minimumSize:
                             MaterialStateProperty.all<Size>(Size(350, 100)),
                         shape:
@@ -833,9 +834,9 @@ class _HomeScreenState extends State<HomeScreen> {
                                 RoundedRectangleBorder(
                           borderRadius: BorderRadius.circular(45.0),
                         ))),
-                    child: Wrap(
+                    child: const Wrap(
                       alignment: WrapAlignment.spaceAround,
-                      children: const [
+                      children: [
                         Text(
                           'GO!',
                           style: TextStyle(
@@ -844,6 +845,7 @@ class _HomeScreenState extends State<HomeScreen> {
                               color: Colors.white),
                         ),
                         Icon(
+                          color: Color(0xFF71F1B5),
                           Icons.play_arrow_rounded,
                           size: 90,
                         ),
@@ -948,7 +950,7 @@ class _HomeScreenState extends State<HomeScreen> {
                       style: TextStyle(
                           fontSize: 75.0,
                           fontWeight: FontWeight.bold,
-                          color: Colors.white),
+                          color: Color(0xFFF1F1F1)),
                     ),
                     Icon(
                       Icons.play_arrow_rounded,
