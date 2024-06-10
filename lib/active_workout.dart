@@ -476,62 +476,6 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
 
         for (int i = 0; i < lengthList; i++) {
           switch (organizedMetrics[0]?[i]) {
-            case "Duration":
-              widgetList.add(
-                  ElevatedButton(
-                      onPressed: () {
-
-                      },
-                      style: ButtonStyle(
-                        padding: MaterialStateProperty.all(
-                            const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                        backgroundColor: MaterialStateProperty.all(
-                            Color(0xFF4F45C2)),
-                        overlayColor: MaterialStateProperty.all(
-                            Colors.transparent),
-                        shape: MaterialStateProperty.all(const CircleBorder()),
-                        elevation: MaterialStateProperty.all(0),
-                      ),
-                      child: SizedBox(
-                          height: screenHeight * 0.12,
-                          width: (screenWidth * 0.95) / 4,
-                          child: FittedBox(
-                              fit: BoxFit.scaleDown,
-                              child:
-                              Column(
-                                mainAxisAlignment: MainAxisAlignment.center,
-                                children: [
-                                  const Text(
-                                    'Duration',
-                                    style: TextStyle(fontSize: 15,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w400),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                  ),
-                                  Text(
-                                    '$minutes:$seconds',
-                                    style: const TextStyle(fontSize: 30,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.45),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                  ),
-                                  const Text(
-                                    'min:s',
-                                    style: TextStyle(fontSize: 15,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w400,
-                                        height: 1.3),
-                                    textAlign: TextAlign.center,
-                                    maxLines: 1,
-                                  ),
-                                ],
-                              )
-                          )
-                      )));
-              break;
             case "Distance":
               widgetList.add(
                   ElevatedButton(

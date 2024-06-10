@@ -4,6 +4,7 @@ import 'package:flutter/material.dart';
 import 'package:google_fonts/google_fonts.dart';
 import 'package:path_provider/path_provider.dart';
 import 'app_logger.dart';
+import 'edit_workout_type.dart';
 
 class ExerciseType extends StatefulWidget {
   final LayerLink link;
@@ -78,11 +79,6 @@ class _ExerciseTypeState extends State<ExerciseType> {
         _inCycleColor = const Color(0xFF4F45C2);
       }
     });
-  }
-
-  editWorkoutType(String workoutType)
-  {
-
   }
 
   Future<List<Widget>> getWorkoutTypes(BuildContext context) async {
@@ -169,7 +165,15 @@ class _ExerciseTypeState extends State<ExerciseType> {
                         IconButton(
                           icon: const Icon(Icons.edit, size: 25, color: Color(0xFF71F1B5)),
                           onPressed: () {
-                            editWorkoutType(workoutType);
+                            widget.overlayEntry.remove();
+                            Navigator.push(
+                              context,
+                              MaterialPageRoute(
+                                builder: (context) => ModifyExerciseType(
+                                  exerciseType: workoutType,  // Pass the exerciseType as a parameter
+                                ),
+                              ),
+                            );
                           },
                         ),
                       ],

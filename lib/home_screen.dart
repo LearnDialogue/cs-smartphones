@@ -87,11 +87,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(children: <Widget>[
           Positioned.fill(
               child: GestureDetector(
-            onTap: dismissMenu,
-            child: Container(
-              color: Colors.transparent,
-            ),
-          )),
+                onTap: dismissMenu,
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              )),
           Positioned(
             width: dialogWidth,
             height: dialogHeight,
@@ -122,11 +122,11 @@ class _HomeScreenState extends State<HomeScreen> {
         return Stack(children: <Widget>[
           Positioned.fill(
               child: GestureDetector(
-            onTap: dismissMenu,
-            child: Container(
-              color: Colors.transparent,
-            ),
-          )),
+                onTap: dismissMenu,
+                child: Container(
+                  color: Colors.transparent,
+                ),
+              )),
           Positioned(
             width: dialogWidth,
             height: dialogHeight,
@@ -155,22 +155,22 @@ class _HomeScreenState extends State<HomeScreen> {
           children: <Widget>[
             Positioned.fill(
                 child: GestureDetector(
-              onTap: dismissMenu,
-              child: Container(
-                color: Colors.transparent,
-              ),
-            )),
+                  onTap: dismissMenu,
+                  child: Container(
+                    color: Colors.transparent,
+                  ),
+                )),
             Positioned(
               width: dialogWidth,
               height: dialogHeight,
               top: 0.0,
               left: 0.0,
               child: PartnerConnect(
-                  // flutterReactiveBle: flutterReactiveBle,
-                  // callback: (deviceList)=> setState(() {
-                  //   connectedDevices = deviceList;
-                  // }),
-                  // connectedDevices: connectedDevices,
+                // flutterReactiveBle: flutterReactiveBle,
+                // callback: (deviceList)=> setState(() {
+                //   connectedDevices = deviceList;
+                // }),
+                // connectedDevices: connectedDevices,
                   deviceType: DeviceType.advertiser,
                   offset: dialogOffset,
                   link: layerLink,
@@ -228,7 +228,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // default indoor run
         File inRunFile = await File("$appDocumentsDirectory/pageOrder/Indoor Run.json").create(recursive: true);
         strKeys = {
-          "0": ["Duration"],
+          "0": ["Heart Rate Zone"],
           "1": ["Heart Rate"],
           "2": ["Peer Heart Rate"]
         };
@@ -238,7 +238,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // default outdoor walk
         File outWalkFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Walk.json").create(recursive: true);
         strKeys = {
-          "0": ["Duration", "Distance", "Speed", "Pace"],
+          "0": ["Distance", "Speed", "Pace"],
           "1": ["Heart Rate"],
           "2": ["Peer Heart Rate"],
         };
@@ -248,7 +248,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // default indoor walk
         File inWalkFile = await File("$appDocumentsDirectory/pageOrder/Indoor Walk.json").create(recursive: true);
         strKeys = {
-          "0": ["Duration"],
+          "0": ["Heart Rate Zone"],
           "1": ["Heart Rate"],
           "2": ["Peer Heart Rate"]
         };
@@ -258,7 +258,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // default outdoor bike
         File outBikeFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Biking.json").create(recursive: true);
         strKeys = {
-          "0": ["Duration", "Distance", "Speed", "Pace"],
+          "0": ["Distance", "Speed", "Pace"],
           "1": ["Heart Rate", "Power"],
           "2": ["Peer Heart Rate", "Peer Power"],
         };
@@ -268,7 +268,7 @@ class _HomeScreenState extends State<HomeScreen> {
         // indoor bike
         File inBikeFile = await File("$appDocumentsDirectory/pageOrder/Indoor Biking.json").create(recursive: true);
         strKeys = {
-          "0": ["Duration"],
+          "0": ["Heart Rate Zone"],
           "1": ["Heart Rate", "Power"],
           "2": ["Peer Heart Rate", "Peer Power"],
         };
@@ -296,11 +296,11 @@ class _HomeScreenState extends State<HomeScreen> {
     super.initState();
 
     _getPermissions().then((_) {
-        _getUserLocation();
-        // Subscribe to position stream.
-        _positionStreamSubscription = Geolocator.getPositionStream(
-            locationSettings: LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 15))
-            .listen(_onPositionUpdate);
+      _getUserLocation();
+      // Subscribe to position stream.
+      _positionStreamSubscription = Geolocator.getPositionStream(
+          locationSettings: LocationSettings(accuracy: LocationAccuracy.high, distanceFilter: 15))
+          .listen(_onPositionUpdate);
     });
     // _getUserLocation();
 
@@ -547,11 +547,11 @@ class _HomeScreenState extends State<HomeScreen> {
             actionsAlignment: MainAxisAlignment.center,
             actions: <Widget>[
               TextButton(
-                  onPressed: () {
-                    Navigator.of(context).pop();
-                    showExerciseTypeDialog();
-                  },
-                  child: const Text('Confirm'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  showExerciseTypeDialog();
+                },
+                child: const Text('Confirm'),
               )
             ],
           );
@@ -589,7 +589,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   }
                 },
                 child: const Text(
-                    'Continue without sensor',
+                  'Continue without sensor',
                   textAlign: TextAlign.end,
                 ),
               ),
@@ -651,63 +651,63 @@ class _HomeScreenState extends State<HomeScreen> {
   // UI for dialog buttons that appear on map.
   _showDialogButtons(double screenHeight, double screenWidth) {
     return Stack(
-      children: [
-        // Choose exercise type button
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-              screenWidth * 0.08, screenHeight * 0.63, 30, 0),
-          child: ElevatedButton(
-              style: ButtonStyle(
-                shape: MaterialStateProperty.all(
-                    const CircleBorder()),
-                padding: MaterialStateProperty.all(
-                    const EdgeInsets.all(10)),
-                backgroundColor: MaterialStateProperty.all(
-                    const Color(0xFF4F45C2)), // <-- Button color
-              ),
-              onPressed: () {
-                showExerciseTypeDialog();
-              },
-              child: Icon(_getIcon(), size: 30, color: const Color(0xFF71F1B5))),
-        ),
-        // Connect to sensors button
-        Padding(
-          padding: EdgeInsets.fromLTRB((screenWidth - 65) / 2,
-              screenHeight * 0.63, 30, 0),
-          child: ElevatedButton(
-              style: ButtonStyle(
-                shape: MaterialStateProperty.all(
-                    const CircleBorder()),
-                padding: MaterialStateProperty.all(
-                    const EdgeInsets.all(10)),
-                backgroundColor: MaterialStateProperty.all(
-                    const Color(0xFF4F45C2)), // <-- Button color
-              ),
-              onPressed: () async {
-                showConnectMonitorsDialog();
-              },
-              child: const Icon(Icons.bluetooth_connected,
-                  size: 30, color: Color(0xFF71F1B5))),
-        ),
-        // Connect to partners button
-        Padding(
-          padding: EdgeInsets.fromLTRB(
-              screenWidth * 0.78, screenHeight * 0.63, 30, 0),
-          child: ElevatedButton(
-              style: ButtonStyle(
-                shape: MaterialStateProperty.all(
-                    const CircleBorder()),
-                padding: MaterialStateProperty.all(
-                    const EdgeInsets.all(10)),
-                backgroundColor: MaterialStateProperty.all(
-                    const Color(0xFF4F45C2)), // <-- Button color
-              ),
-              onPressed: () async {
-                showConnectPartnersDialog();
-              },
-              child: const Icon(Icons.people_alt_sharp, color: Color(0xFF71F1B5))),
-        )
-      ]);
+        children: [
+          // Choose exercise type button
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                screenWidth * 0.08, screenHeight * 0.63, 30, 0),
+            child: ElevatedButton(
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all(
+                      const CircleBorder()),
+                  padding: MaterialStateProperty.all(
+                      const EdgeInsets.all(10)),
+                  backgroundColor: MaterialStateProperty.all(
+                      const Color(0xFF4F45C2)), // <-- Button color
+                ),
+                onPressed: () {
+                  showExerciseTypeDialog();
+                },
+                child: Icon(_getIcon(), size: 30, color: const Color(0xFF71F1B5))),
+          ),
+          // Connect to sensors button
+          Padding(
+            padding: EdgeInsets.fromLTRB((screenWidth - 65) / 2,
+                screenHeight * 0.63, 30, 0),
+            child: ElevatedButton(
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all(
+                      const CircleBorder()),
+                  padding: MaterialStateProperty.all(
+                      const EdgeInsets.all(10)),
+                  backgroundColor: MaterialStateProperty.all(
+                      const Color(0xFF4F45C2)), // <-- Button color
+                ),
+                onPressed: () async {
+                  showConnectMonitorsDialog();
+                },
+                child: const Icon(Icons.bluetooth_connected,
+                    size: 30, color: Color(0xFF71F1B5))),
+          ),
+          // Connect to partners button
+          Padding(
+            padding: EdgeInsets.fromLTRB(
+                screenWidth * 0.78, screenHeight * 0.63, 30, 0),
+            child: ElevatedButton(
+                style: ButtonStyle(
+                  shape: MaterialStateProperty.all(
+                      const CircleBorder()),
+                  padding: MaterialStateProperty.all(
+                      const EdgeInsets.all(10)),
+                  backgroundColor: MaterialStateProperty.all(
+                      const Color(0xFF4F45C2)), // <-- Button color
+                ),
+                onPressed: () async {
+                  showConnectPartnersDialog();
+                },
+                child: const Icon(Icons.people_alt_sharp, color: Color(0xFF71F1B5))),
+          )
+        ]);
   }
 
   // Change icon for exercise type button depending on type that is chosen.
@@ -765,27 +765,27 @@ class _HomeScreenState extends State<HomeScreen> {
                     _showDialogButtons(screenHeight, screenWidth),
                   ])
                   : Stack(
-                      children: [
-                        GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                              target: _initialPosition!, zoom: 15),
-                          mapType: MapType.normal,
-                          onMapCreated: _onMapCreated,
-                          myLocationEnabled: true,
-                          myLocationButtonEnabled: false,
-                        ),
-                        Padding(
-                            padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
-                            child: FloatingActionButton(
-                              backgroundColor: Colors.transparent,
-                              onPressed: _currentLocation,
-                              child:
-                                  Icon(Icons.location_on, color: Colors.black),
-                            )
-                        ),
-                        _showDialogButtons(screenHeight, screenWidth),
-                      ],
-                    ),
+                children: [
+                  GoogleMap(
+                    initialCameraPosition: CameraPosition(
+                        target: _initialPosition!, zoom: 15),
+                    mapType: MapType.normal,
+                    onMapCreated: _onMapCreated,
+                    myLocationEnabled: true,
+                    myLocationButtonEnabled: false,
+                  ),
+                  Padding(
+                      padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
+                      child: FloatingActionButton(
+                        backgroundColor: Colors.transparent,
+                        onPressed: _currentLocation,
+                        child:
+                        Icon(Icons.location_on, color: Colors.black),
+                      )
+                  ),
+                  _showDialogButtons(screenHeight, screenWidth),
+                ],
+              ),
             ),
           ),
           // Go button.
@@ -826,14 +826,14 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     style: ButtonStyle(
                         backgroundColor:
-                            MaterialStateProperty.all(const Color(0xFF4F45C2)),
+                        MaterialStateProperty.all(const Color(0xFF4F45C2)),
                         minimumSize:
-                            MaterialStateProperty.all<Size>(Size(350, 100)),
+                        MaterialStateProperty.all<Size>(Size(350, 100)),
                         shape:
-                            MaterialStateProperty.all<RoundedRectangleBorder>(
-                                RoundedRectangleBorder(
-                          borderRadius: BorderRadius.circular(45.0),
-                        ))),
+                        MaterialStateProperty.all<RoundedRectangleBorder>(
+                            RoundedRectangleBorder(
+                              borderRadius: BorderRadius.circular(45.0),
+                            ))),
                     child: const Wrap(
                       alignment: WrapAlignment.spaceAround,
                       children: [
@@ -869,7 +869,7 @@ class _HomeScreenState extends State<HomeScreen> {
               shape: MaterialStateProperty.all(const CircleBorder()),
               padding: MaterialStateProperty.all(const EdgeInsets.all(10)),
               backgroundColor:
-                  MaterialStateProperty.all(Colors.orange), // <-- Button color
+              MaterialStateProperty.all(Colors.orange), // <-- Button color
             ),
             onPressed: () async {
               LoggerEvent loggedEvent = LoggerEvent(eventType: "2");
@@ -887,13 +887,13 @@ class _HomeScreenState extends State<HomeScreen> {
       Padding(
         /// Connect partners
         padding:
-            EdgeInsets.fromLTRB(screenWidth * 0.78, screenHeight * 0.63, 30, 0),
+        EdgeInsets.fromLTRB(screenWidth * 0.78, screenHeight * 0.63, 30, 0),
         child: ElevatedButton(
             style: ButtonStyle(
               shape: MaterialStateProperty.all(const CircleBorder()),
               padding: MaterialStateProperty.all(const EdgeInsets.all(10)),
               backgroundColor:
-                  MaterialStateProperty.all(Colors.orange), // <-- Button color
+              MaterialStateProperty.all(Colors.orange), // <-- Button color
             ),
             onPressed: () async {
               LoggerEvent loggedEvent = LoggerEvent(eventType: "2");
@@ -937,11 +937,11 @@ class _HomeScreenState extends State<HomeScreen> {
                 style: ButtonStyle(
                     backgroundColor: MaterialStateProperty.all(Colors.green),
                     minimumSize:
-                        MaterialStateProperty.all<Size>(Size(350, 100)),
+                    MaterialStateProperty.all<Size>(Size(350, 100)),
                     shape: MaterialStateProperty.all<RoundedRectangleBorder>(
                         RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(45.0),
-                    ))),
+                          borderRadius: BorderRadius.circular(45.0),
+                        ))),
                 child: Wrap(
                   alignment: WrapAlignment.spaceAround,
                   children: const [
