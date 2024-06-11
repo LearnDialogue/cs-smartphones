@@ -71,19 +71,15 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
     return true;
   }
 
-  // TODO: allow the metrics being returned here to be draggable except for the add button.
-  // upon dragging and reordering the metrics, store the new map on the device.
   List<Widget> getTopBoxMetrics()
   {
     try {
       List<Widget> widgetList = [];
 
-      print("Organized Metrics: $organizedMetrics");
-
       for (int i = 0; i < organizedMetrics[0]!.length; i++)
       {
-        print ("organized metrics $i: ${organizedMetrics[0]![i]}");
         TextButton newButton = TextButton(
+          key: ValueKey(i),
           style: ButtonStyle(foregroundColor: MaterialStateProperty.all<Color>(
               const Color(0xFF4F45C2))),
           onPressed: () {},
@@ -92,6 +88,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         widgetList.add(newButton);
       }
 
+      /*
       if (organizedMetrics[0]!.length < 4)
       {
         IconButton addButton = IconButton(
@@ -103,6 +100,8 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         );
         widgetList.add(addButton);
       }
+      */
+
       return widgetList;
     }
     catch (e)
@@ -184,6 +183,34 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
     });
   }
 
+  Map<String, List<String>> convertIntKeyToString(Map<int, List<String>> originalMap)
+  {
+    return originalMap.map((key, value) => MapEntry(key.toString(), value));
+  }
+
+  Future<void> updateMyTopItems(int oldIndex, int newIndex)
+  async {
+    if (newIndex > oldIndex) {
+      newIndex -= 1;
+    }
+
+    setState(() {
+      final item = organizedMetrics[0]!.removeAt(oldIndex);
+      organizedMetrics[0]!.insert(newIndex, item);
+    });
+
+    if (!organizedMetrics.isEmpty)
+    {
+      Map<String, List<String>> MapToStore = convertIntKeyToString(organizedMetrics);
+      String jsonString = jsonEncode(MapToStore);
+
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/pageOrder/${widget.exerciseType}.json');
+
+      await file.writeAsString(jsonString);
+    }
+  }
+
   @override
   void initState() {
     _getCurrentLocation();
@@ -216,61 +243,61 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         title: Text('Edit Workout Type: \n${widget.exerciseType}', textAlign: TextAlign.center, style: TextStyle(color: Colors.white)),
       ),
       body: Center(
-        child: Column(
-          children: [
+          child: Column(
+              children: [
 
-            /// Map
-            SizedBox(
-              height: screenHeight * 0.45,
-              width: screenWidth,
-              child:
-              _initialPosition == null ? Center(child:Text('loading map..', style: TextStyle(fontFamily: 'Avenir-Medium', color: Colors.grey[400]),),) :
-              Stack(
-                children: [
-                  GoogleMap(
-                      initialCameraPosition: CameraPosition(target: LatLng(_initialPosition!.latitude, _initialPosition!.longitude), zoom: 15),
-                      mapType: MapType.normal,
-                      onMapCreated: _onMapCreated,
-                      myLocationEnabled: true,
-                      myLocationButtonEnabled: false,
-                      gestureRecognizers: Set()
-                        ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer())),
-                      polylines: _polyLines
+                /// Map
+                SizedBox(
+                  height: screenHeight * 0.45,
+                  width: screenWidth,
+                  child:
+                  _initialPosition == null ? Center(child:Text('loading map..', style: TextStyle(fontFamily: 'Avenir-Medium', color: Colors.grey[400]),),) :
+                  Stack(
+                    children: [
+                      GoogleMap(
+                          initialCameraPosition: CameraPosition(target: LatLng(_initialPosition!.latitude, _initialPosition!.longitude), zoom: 15),
+                          mapType: MapType.normal,
+                          onMapCreated: _onMapCreated,
+                          myLocationEnabled: true,
+                          myLocationButtonEnabled: false,
+                          gestureRecognizers: Set()
+                            ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer())),
+                          polylines: _polyLines
 
-                  ),
-                  Padding(
-                      padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
-                      child: FloatingActionButton(
-                        backgroundColor: Colors.transparent,
-                        onPressed: _currentLocation,
-                        child: const Icon(Icons.location_on, color: Color(0xFF4F45C2)),
-                      )
-                  ),
-                ],
-              ),
-            ),
-            Padding(
-              padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
-              child: SizedBox(
-                height: screenHeight * 0.12,
-                width: screenWidth * 0.95,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
-                  child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                      //crossAxisAlignment: CrossAxisAlignment.start,
-                      children: <Widget>[
-                        Row(
-                            children:
-                            getTopBoxMetrics()
-                        ),
-                      ]
+                      ),
+                      Padding(
+                          padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
+                          child: FloatingActionButton(
+                            backgroundColor: Colors.transparent,
+                            onPressed: _currentLocation,
+                            child: const Icon(Icons.location_on, color: Color(0xFF4F45C2)),
+                          )
+                      ),
+                    ],
                   ),
                 ),
-              ),
-            ),
-          ]
-        )
+                Padding(
+                  padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
+                  child: SizedBox(
+                    height: screenHeight * 0.12,
+                    width: screenWidth * 0.95,
+                    child: DecoratedBox(
+                        decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
+                        // TODO: add add metric functionality if number in top row is less than 4.
+                        child: ReorderableListView(
+                            scrollDirection: Axis.horizontal,
+                            onReorder: (oldIndex, newIndex) {
+                              setState(() {
+                                updateMyTopItems(oldIndex, newIndex);
+                              });
+                            },
+                            children: getTopBoxMetrics()
+                        )
+                    ),
+                  ),
+                ),
+              ]
+          )
       ),
     );
   }
