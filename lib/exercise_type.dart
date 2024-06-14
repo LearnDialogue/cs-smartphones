@@ -165,6 +165,10 @@ class _ExerciseTypeState extends State<ExerciseType> {
                         IconButton(
                           icon: const Icon(Icons.edit, size: 25, color: Color(0xFF71F1B5)),
                           onPressed: () {
+                            _setColor(workoutType);
+                            // this should just be setExerciseType in home_screen.dart
+                            // I might be wrong though.
+                            widget.callBack(workoutType);
                             widget.overlayEntry.remove();
                             Navigator.push(
                               context,

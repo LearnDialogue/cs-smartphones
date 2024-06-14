@@ -30,6 +30,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
   late Map<int, List<String>> organizedMetrics = {};
   bool isLoading = true;
   String? errorMessage;
+  bool addWidget = false;
 
   // initializes map of int : List<String> that represents the metric UI boxes and the metrics they contain.
   Future<void> loadMetrics() async {
@@ -66,48 +67,176 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
     return await file.readAsString();
   }
 
-  bool addMetric()
+  // Adds the metric to the map and stores in file
+  Future<void> updateAfterAdd(String newMetric, int box)
+  async {
+    organizedMetrics[box]?.add(newMetric);
+    if (box == 0)
+    {
+        if (organizedMetrics[0]!.length >= 4)
+        {
+            addWidget = false;
+        }
+    }
+    Map<String, List<String>> mapToStore = convertIntKeyToString(organizedMetrics);
+
+    String jsonString = jsonEncode(mapToStore);
+
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/pageOrder/${widget.exerciseType}.json');
+
+    await file.writeAsString(jsonString);
+  }
+
+  // Basically, this is called when a widget needs to be added to a box.
+  // It checks which metrics are already present, and based on that, the dialog that
+  // appears will present the options for metrics to be added.
+  Future<void> addMetric(List<String> metrics, int box, BuildContext context)
+  async {
+    List<String> possibleMetrics = [];
+    switch (box)
+    {
+      case 1:
+        possibleMetrics = ["Distance", "Pace", "Speed", "Heart Rate Zone"];
+        possibleMetrics.removeWhere((metric) => metrics.contains(metric));
+        return showDialog<void>(
+          context: context,
+          barrierDismissible: false,
+          builder: (BuildContext context){
+            return AlertDialog(
+              title: const Text("Choose a Metric:", textAlign: TextAlign.center),
+              content: SingleChildScrollView(
+                child: ListBody(
+                  children: [
+                    ...possibleMetrics.map((metric) {
+                      return TextButton(
+                        child: Text(metric),
+                        onPressed: () {
+                          setState(() {
+                            updateAfterAdd(metric, 0);
+                            Navigator.of(context).pop();
+                          });
+                        },
+                      );
+                    }).toList(),
+                    TextButton(
+                      child: const Text("Exit"),
+                      onPressed: () {
+                        setState(() {
+                          Navigator.of(context).pop();
+                        });
+                      },
+                    ),
+                  ],
+                ),
+              ),
+            );
+          }
+        );
+      case 2:
+        possibleMetrics = ["Heart Rate", "Power"];
+        break;
+      case 3:
+        possibleMetrics = ["Peer Heart Rate", "Peer Power"];
+        break;
+    }
+  }
+
+  // this deletes the metric from the files
+  Future<void> handleDelete(String metric, int box)
+  async {
+      organizedMetrics[box]?.remove(metric);
+      Map<String, List<String>> mapToStore = convertIntKeyToString(organizedMetrics);
+
+      String jsonString = jsonEncode(mapToStore);
+
+      final directory = await getApplicationDocumentsDirectory();
+      final file = File('${directory.path}/pageOrder/${widget.exerciseType}.json');
+
+      await file.writeAsString(jsonString);
+  }
+
+  Future<void> showDeleteDialog(BuildContext context, String metric, int box)
   {
-    return true;
+    return showDialog<void>(
+      context: context,
+      barrierDismissible: false,
+      builder: (BuildContext context) {
+        return AlertDialog(
+          title: Text("Delete $metric?"),
+          content: SingleChildScrollView(
+            child: ListBody(
+              children: <Widget>[
+                TextButton(
+                  child: const Text("Yes"),
+                  onPressed: () {
+                    setState(() {
+                      handleDelete(metric, box);
+                      Navigator.of(context).pop();
+                    });
+                  }
+                ),
+                TextButton(
+                  child: const Text("No"),
+                  onPressed: () {
+                    setState(() {
+                      Navigator.of(context).pop();
+                    });
+                  }
+                )
+              ]
+            )
+          )
+        );
+      }
+    );
   }
 
   List<Widget> getTopBoxMetrics()
   {
+    if (isLoading) {
+      return [const Center(key: ValueKey('loading'), child: CircularProgressIndicator())];
+    }
+
     try {
       List<Widget> widgetList = [];
 
       for (int i = 0; i < organizedMetrics[0]!.length; i++)
       {
         TextButton newButton = TextButton(
-          key: ValueKey(i),
-          style: ButtonStyle(foregroundColor: MaterialStateProperty.all<Color>(
-              const Color(0xFF4F45C2))),
-          onPressed: () {},
+          key: ValueKey('top-box-metric-$i'),
+          style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF4F45C2)),
+            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF4F45C2)),
+            overlayColor: MaterialStateProperty.resolveWith<Color?>(
+                  (Set<MaterialState> states) {
+                // This will prevent any color change on press or long-press
+                if (states.contains(MaterialState.pressed)) {
+                  return Colors.transparent; // Set to transparent to disable overlay color
+                }
+                return null; // Use default overlay color
+              },
+            ),
+          ),
+          onPressed: () {
+              showDeleteDialog(context, organizedMetrics[0]![i], 0);
+          },
           child: Text(organizedMetrics[0]![i], style: const TextStyle(color: Colors.white, fontSize: 16)),
         );
         widgetList.add(newButton);
       }
 
-      /*
       if (organizedMetrics[0]!.length < 4)
       {
-        IconButton addButton = IconButton(
-            iconSize: 25,
-            icon: const Icon(Icons.add),
-            onPressed: () {
-              addMetric();
-            }
-        );
-        widgetList.add(addButton);
+        addWidget = true;
       }
-      */
 
       return widgetList;
     }
     catch (e)
     {
       print('exception: ${e.toString()}');
-      return [const Center(child: CircularProgressIndicator())];
+      return [const Center(key: ValueKey('loading'), child: CircularProgressIndicator())];
     }
   }
 
@@ -190,6 +319,11 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
 
   Future<void> updateMyTopItems(int oldIndex, int newIndex)
   async {
+
+    if (isLoading) {
+      return;
+    }
+
     if (newIndex > oldIndex) {
       newIndex -= 1;
     }
@@ -201,8 +335,8 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
 
     if (!organizedMetrics.isEmpty)
     {
-      Map<String, List<String>> MapToStore = convertIntKeyToString(organizedMetrics);
-      String jsonString = jsonEncode(MapToStore);
+      Map<String, List<String>> mapToStore = convertIntKeyToString(organizedMetrics);
+      String jsonString = jsonEncode(mapToStore);
 
       final directory = await getApplicationDocumentsDirectory();
       final file = File('${directory.path}/pageOrder/${widget.exerciseType}.json');
@@ -215,7 +349,6 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
   void initState() {
     _getCurrentLocation();
     loadMetrics();
-    print(organizedMetrics);
     super.initState();
 
     // Initialize any necessary state or start loading data here.
@@ -276,23 +409,51 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                     ],
                   ),
                 ),
+
+                // this is the top box edit screen
                 Padding(
                   padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
                   child: SizedBox(
                     height: screenHeight * 0.12,
                     width: screenWidth * 0.95,
                     child: DecoratedBox(
-                        decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
-                        // TODO: add add metric functionality if number in top row is less than 4.
-                        child: ReorderableListView(
-                            scrollDirection: Axis.horizontal,
-                            onReorder: (oldIndex, newIndex) {
-                              setState(() {
-                                updateMyTopItems(oldIndex, newIndex);
-                              });
-                            },
-                            children: getTopBoxMetrics()
-                        )
+                      decoration: BoxDecoration(
+                        color: Color(0xFF4F45C2),
+                        borderRadius: BorderRadius.circular(20.0),
+                      ),
+                      child: Row(
+                        children: [
+                          // Expanded widget for the ReorderableListView to take available space
+                          Expanded(
+                            child: ReorderableListView(
+                              scrollDirection: Axis.horizontal,
+                              onReorder: (oldIndex, newIndex) {
+                                setState(() {
+                                  updateMyTopItems(oldIndex, newIndex);
+                                });
+                              },
+                              proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                                return Material(
+                                  color: Colors.transparent,
+                                  child: child,
+                                );
+                              },
+                              children: getTopBoxMetrics(),
+                            ),
+                          ),
+                          // Add your new widget here
+                          if (addWidget)
+                            IconButton(
+                              iconSize: 40,
+                              icon: const Icon(Icons.add, color: Colors.white),
+                              onPressed: () {
+                                setState(() {
+                                  addMetric(organizedMetrics[0]!, 1, context);
+                                });
+                              }
+                            )
+                        ],
+                      ),
                     ),
                   ),
                 ),

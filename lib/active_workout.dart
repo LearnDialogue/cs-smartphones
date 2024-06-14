@@ -749,44 +749,45 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                     SizedBox(
                       height: 30,
                       child:
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          SizedBox(
-                            width: screenWidth * .1,
-                            child: const Icon(Icons.heart_broken, size: 30, color: Color(0xFF71F1B5),),
-                          ),
-                          GestureDetector(
-                              onTap: () {
-                                if (maxHR != null) {
-                                  setState(() {
-                                    _displayPercent = !_displayPercent;
-                                  });
-                                }
-                              },
-                              child :SizedBox(
-                                  width: screenWidth * .15,
-                                  child: FittedBox(
-                                    fit: BoxFit.scaleDown,
-                                    child: Text(
-                                      "$displayHRPercent",
-                                      textAlign: TextAlign.center,
-                                      style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
-                                    ),)
-                              )
-                          ),
-                          SizedBox(
+                      GestureDetector(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            SizedBox(
                               width: screenWidth * .1,
-                              child: FittedBox(
+                              child: const Icon(Icons.heart_broken, size: 30, color: Color(0xFF71F1B5),),
+                            ),
+
+                            SizedBox(
+                                width: screenWidth * .15,
+                                child: FittedBox(
                                   fit: BoxFit.scaleDown,
                                   child: Text(
-                                    heartRateText,
+                                    "$displayHRPercent",
                                     textAlign: TextAlign.center,
-                                    style: const TextStyle(fontSize: 15, color: Color(0xFF71F1B5), fontWeight: FontWeight.w500),
-                                  ))
-                          ),
-                        ],
-                      ),
+                                    style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
+                                  ),)
+                            ),
+                            SizedBox(
+                                width: screenWidth * .1,
+                                child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      heartRateText,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 15, color: Color(0xFF71F1B5), fontWeight: FontWeight.w500),
+                                    ))
+                            ),
+                          ],
+                        ),
+                        onTap: () {
+                          if (maxHR != null) {
+                            setState(() {
+                              _displayPercent = !_displayPercent;
+                            });
+                          }
+                        },
+                      )
                     )
                   );
                   break;
