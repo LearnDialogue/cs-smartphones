@@ -110,7 +110,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                   children: [
                     ...possibleMetrics.map((metric) {
                       return TextButton(
-                        child: Text(metric),
+                        child: Text(metric, style: const TextStyle(fontSize: 25, color: Colors.black)),
                         onPressed: () {
                           setState(() {
                             updateAfterAdd(metric, 0);
@@ -120,7 +120,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                       );
                     }).toList(),
                     TextButton(
-                      child: const Text("Exit"),
+                      child: const Text("Exit", style: TextStyle(fontSize: 25, color: Colors.black)),
                       onPressed: () {
                         setState(() {
                           Navigator.of(context).pop();
@@ -163,12 +163,12 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
       barrierDismissible: false,
       builder: (BuildContext context) {
         return AlertDialog(
-          title: Text("Delete $metric?"),
+          title: Text("Delete $metric?", textAlign: TextAlign.center),
           content: SingleChildScrollView(
             child: ListBody(
               children: <Widget>[
                 TextButton(
-                  child: const Text("Yes"),
+                  child: const Text("Yes", style: TextStyle(fontSize: 25, color: Colors.black)),
                   onPressed: () {
                     setState(() {
                       handleDelete(metric, box);
@@ -177,7 +177,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                   }
                 ),
                 TextButton(
-                  child: const Text("No"),
+                  child: const Text("No", style: TextStyle(fontSize: 25, color: Colors.black)),
                   onPressed: () {
                     setState(() {
                       Navigator.of(context).pop();
