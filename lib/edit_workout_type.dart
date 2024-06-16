@@ -32,6 +32,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
   String? errorMessage;
   bool addWidget = false;
   bool addWidget2 = false;
+  bool addWidget3 = false;
 
   // initializes map of int : List<String> that represents the metric UI boxes and the metrics they contain.
   Future<void> loadMetrics() async {
@@ -192,6 +193,54 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         );
       }
     );
+  }
+
+  List<Widget> getPeerStats()
+  {
+    if (isLoading) {
+      return [const Center(key: ValueKey('loading'), child: CircularProgressIndicator())];
+    }
+
+    try {
+      List<Widget> widgetList = [];
+
+      for (int i = 0; i < organizedMetrics[2]!.length; i++)
+      {
+        TextButton newButton = TextButton(
+          key: ValueKey('peer-metric-$i'),
+          style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF4F45C2)),
+            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF4F45C2)),
+            overlayColor: MaterialStateProperty.resolveWith<Color?>(
+                  (Set<MaterialState> states) {
+                // This will prevent any color change on press or long-press
+                if (states.contains(MaterialState.pressed)) {
+                  return Colors.transparent; // Set to transparent to disable overlay color
+                }
+                return null; // Use default overlay color
+              },
+            ),
+          ),
+          onPressed: () {
+            showDeleteDialog(context, organizedMetrics[2]![i], 2);
+          },
+          child: Text(organizedMetrics[2]![i], style: const TextStyle(color: Colors.white, fontSize: 14)),
+        );
+        widgetList.add(newButton);
+      }
+
+      if (organizedMetrics[2]!.length < 2)
+      {
+        addWidget3 = true;
+      }
+
+      return widgetList;
+    }
+    catch (e)
+    {
+      print('exception: ${e.toString()}');
+      return [const Center(key: ValueKey('loading'), child: CircularProgressIndicator())];
+    }
   }
 
   List<Widget>getPersonalStats()
@@ -463,6 +512,51 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                 ],
               ),
             )
+        ),
+        Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          color: const Color(0xFF4F45C2),
+          child:
+          SizedBox(
+            width: screenWidth * .35,
+            height: screenHeight * 0.20,
+            child: Column(
+              children: [
+                const SizedBox(
+                  height: 5,
+                ),
+                const Text("Partner Metrics", style: TextStyle(fontSize: 16, color: Colors.white), textAlign: TextAlign.center,),
+                // Expanded widget for the ReorderableListView to take available space
+                Expanded(
+                  child: ReorderableListView(
+                    scrollDirection: Axis.vertical,
+                    onReorder: (oldIndex, newIndex) {
+                      setState(() {
+                        updateMyItems(oldIndex, newIndex, 2);
+                      });
+                    },
+                    proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                      return Material(
+                        color: Colors.transparent,
+                        child: child,
+                      );
+                    },
+                    children: getPeerStats(),
+                  ),
+                ),
+                if (addWidget3)
+                  IconButton(
+                      iconSize: 40,
+                      icon: const Icon(Icons.add, color: Colors.white),
+                      onPressed: () {
+                        setState(() {
+                          addMetric(organizedMetrics[2]!, 3, context);
+                        });
+                      }
+                  )
+              ],
+            ),
+          )
         )
       ],
     );
