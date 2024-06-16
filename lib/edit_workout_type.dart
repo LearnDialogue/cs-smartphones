@@ -31,6 +31,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
   bool isLoading = true;
   String? errorMessage;
   bool addWidget = false;
+  bool addWidget2 = false;
 
   // initializes map of int : List<String> that represents the metric UI boxes and the metrics they contain.
   Future<void> loadMetrics() async {
@@ -98,41 +99,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
     {
       case 1:
         possibleMetrics = ["Distance", "Pace", "Speed", "Heart Rate Zone"];
-        possibleMetrics.removeWhere((metric) => metrics.contains(metric));
-        return showDialog<void>(
-          context: context,
-          barrierDismissible: false,
-          builder: (BuildContext context){
-            return AlertDialog(
-              title: const Text("Choose a Metric:", textAlign: TextAlign.center),
-              content: SingleChildScrollView(
-                child: ListBody(
-                  children: [
-                    ...possibleMetrics.map((metric) {
-                      return TextButton(
-                        child: Text(metric, style: const TextStyle(fontSize: 25, color: Colors.black)),
-                        onPressed: () {
-                          setState(() {
-                            updateAfterAdd(metric, 0);
-                            Navigator.of(context).pop();
-                          });
-                        },
-                      );
-                    }).toList(),
-                    TextButton(
-                      child: const Text("Exit", style: TextStyle(fontSize: 25, color: Colors.black)),
-                      onPressed: () {
-                        setState(() {
-                          Navigator.of(context).pop();
-                        });
-                      },
-                    ),
-                  ],
-                ),
-              ),
-            );
-          }
-        );
+        break;
       case 2:
         possibleMetrics = ["Heart Rate", "Power"];
         break;
@@ -140,6 +107,41 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         possibleMetrics = ["Peer Heart Rate", "Peer Power"];
         break;
     }
+    possibleMetrics.removeWhere((metric) => metrics.contains(metric));
+    return showDialog<void>(
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context){
+          return AlertDialog(
+            title: const Text("Choose a Metric:", textAlign: TextAlign.center),
+            content: SingleChildScrollView(
+              child: ListBody(
+                children: [
+                  ...possibleMetrics.map((metric) {
+                    return TextButton(
+                      child: Text(metric, style: const TextStyle(fontSize: 25, color: Colors.black)),
+                      onPressed: () {
+                        setState(() {
+                          updateAfterAdd(metric, box - 1);
+                          Navigator.of(context).pop();
+                        });
+                      },
+                    );
+                  }).toList(),
+                  TextButton(
+                    child: const Text("Exit", style: TextStyle(fontSize: 25, color: Colors.black)),
+                    onPressed: () {
+                      setState(() {
+                        Navigator.of(context).pop();
+                      });
+                    },
+                  ),
+                ],
+              ),
+            ),
+          );
+        }
+    );
   }
 
   // this deletes the metric from the files
@@ -190,6 +192,55 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         );
       }
     );
+  }
+
+  List<Widget>getPersonalStats()
+  {
+    if (isLoading) {
+      return [const Center(key: ValueKey('loading'), child: CircularProgressIndicator())];
+    }
+
+    try {
+      List<Widget> widgetList = [];
+
+      for (int i = 0; i < organizedMetrics[1]!.length; i++)
+      {
+        TextButton newButton = TextButton(
+          key: ValueKey('personal-metric-$i'),
+          style: ButtonStyle(
+            foregroundColor: MaterialStateProperty.all<Color>(const Color(0xFF4F45C2)),
+            backgroundColor: MaterialStateProperty.all<Color>(const Color(0xFF4F45C2)),
+            overlayColor: MaterialStateProperty.resolveWith<Color?>(
+                  (Set<MaterialState> states) {
+                // This will prevent any color change on press or long-press
+                if (states.contains(MaterialState.pressed)) {
+                  return Colors.transparent; // Set to transparent to disable overlay color
+                }
+                return null; // Use default overlay color
+              },
+            ),
+          ),
+          onPressed: () {
+            showDeleteDialog(context, organizedMetrics[1]![i], 1);
+          },
+          child: Text(organizedMetrics[1]![i], style: const TextStyle(color: Colors.white, fontSize: 16)),
+        );
+        widgetList.add(newButton);
+      }
+
+      if (organizedMetrics[1]!.length < 2)
+      {
+        addWidget2 = true;
+      }
+
+      return widgetList;
+    }
+    catch (e)
+    {
+      print('exception: ${e.toString()}');
+      return [const Center(key: ValueKey('loading'), child: CircularProgressIndicator())];
+    }
+
   }
 
   List<Widget> getTopBoxMetrics()
@@ -317,7 +368,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
     return originalMap.map((key, value) => MapEntry(key.toString(), value));
   }
 
-  Future<void> updateMyTopItems(int oldIndex, int newIndex)
+  Future<void> updateMyItems(int oldIndex, int newIndex, int box)
   async {
 
     if (isLoading) {
@@ -329,8 +380,8 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
     }
 
     setState(() {
-      final item = organizedMetrics[0]!.removeAt(oldIndex);
-      organizedMetrics[0]!.insert(newIndex, item);
+      final item = organizedMetrics[box]!.removeAt(oldIndex);
+      organizedMetrics[box]!.insert(newIndex, item);
     });
 
     if (!organizedMetrics.isEmpty)
@@ -364,6 +415,58 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
         .of(context)
         .size
         .height;
+
+    var statsRow = Row(
+      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+      children: [
+        Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+            color: Color(0xFF4F45C2),
+            child:
+            SizedBox(
+              width: screenWidth * .35,
+              height: screenHeight * 0.20,
+              child: Column(
+                children: [
+                  const SizedBox(
+                    height: 5,
+                  ),
+                  const Text("My Metrics", style: TextStyle(fontSize: 16, color: Colors.white), textAlign: TextAlign.center,),
+                  // Expanded widget for the ReorderableListView to take available space
+                  Expanded(
+                    child: ReorderableListView(
+                    scrollDirection: Axis.vertical,
+                    onReorder: (oldIndex, newIndex) {
+                      setState(() {
+                        updateMyItems(oldIndex, newIndex, 1);
+                      });
+                    },
+                    proxyDecorator: (Widget child, int index, Animation<double> animation) {
+                      return Material(
+                        color: Colors.transparent,
+                        child: child,
+                      );
+                    },
+                    children: getPersonalStats(),
+                    ),
+                  ),
+                  if (addWidget2)
+                    IconButton(
+                        iconSize: 40,
+                        icon: const Icon(Icons.add, color: Colors.white),
+                        onPressed: () {
+                          setState(() {
+                            addMetric(organizedMetrics[1]!, 2, context);
+                          });
+                        }
+                    )
+                ],
+              ),
+            )
+        )
+      ],
+    );
+
     return Scaffold(
       backgroundColor: Colors.black,
       appBar: AppBar(
@@ -429,7 +532,7 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                               scrollDirection: Axis.horizontal,
                               onReorder: (oldIndex, newIndex) {
                                 setState(() {
-                                  updateMyTopItems(oldIndex, newIndex);
+                                  updateMyItems(oldIndex, newIndex, 0);
                                 });
                               },
                               proxyDecorator: (Widget child, int index, Animation<double> animation) {
@@ -457,6 +560,9 @@ class _ModifyExerciseTypeState extends State<ModifyExerciseType> {
                     ),
                   ),
                 ),
+                SizedBox(height: screenHeight * .01),
+                statsRow,
+                SizedBox(height: screenHeight * .01),
               ]
           )
       ),
