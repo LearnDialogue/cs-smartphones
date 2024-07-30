@@ -133,6 +133,8 @@ class _PartnerConnectState extends State<PartnerConnect> {
     if (Platform.isAndroid) {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
       devInfo = androidInfo.model;
+      print ("devInfo:");
+      print (devInfo);
     }
     if (Platform.isIOS) {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
@@ -141,6 +143,8 @@ class _PartnerConnectState extends State<PartnerConnect> {
 
     //Scan for devices or show connected devices
     //NOTE: for partner devices to stay connected, the devices must always be advertising and browsing
+    print("BluetoothManager.instance.connectedDevices.isEmpty:");
+    print(BluetoothManager.instance.connectedDevices.isEmpty);
     if (BluetoothManager.instance.connectedDevices.isEmpty) {
       await nearbyService.init(
           serviceType: 'mp-connection',
@@ -151,14 +155,15 @@ class _PartnerConnectState extends State<PartnerConnect> {
           callback: (isRunning) async {
             if (isRunning) {
               widget.logger.loggerEvents.events.add(LoggerEvent(eventType: "11"));
-
               await nearbyService.stopAdvertisingPeer();
               await nearbyService.stopBrowsingForPeers();
               await Future.delayed(Duration(microseconds: 200));
               nearbyService.startAdvertisingPeer();
               nearbyService.startBrowsingForPeers();
+              print("Made it here 3");
             }
           });
+      print("Made it here 4");
     }
     else {
       setState(() {
@@ -171,7 +176,9 @@ class _PartnerConnectState extends State<PartnerConnect> {
     //state stream used to get list of scanned devices
     //NOTE: new devices are only found when there is a change in state
     subscription = BluetoothManager.instance.startStateSubscription();
+    print ("Made it here 1");
     subscription?.onData((devicesList) {
+      print("Made it here 2");
       devicesList.forEach((element) {
         print(
             " deviceId: ${element.deviceId} | deviceName: ${element.deviceName} | state: ${element.state}");
