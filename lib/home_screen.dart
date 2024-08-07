@@ -2,7 +2,7 @@ import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
 
-import 'package:device_info/device_info.dart';
+import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_config/flutter_config.dart';
@@ -299,12 +299,10 @@ class _HomeScreenState extends State<HomeScreen> {
     DeviceInfoPlugin deviceInfo = DeviceInfoPlugin();
     if (Platform.isAndroid) {
       AndroidDeviceInfo androidInfo = await deviceInfo.androidInfo;
-      device.deviceId = androidInfo.androidId;
-      // device.serialNumber = androidInfo.;
+      device.deviceId = androidInfo.id;
     } else if (Platform.isIOS) {
       IosDeviceInfo iosInfo = await deviceInfo.iosInfo;
-      device.deviceId =
-          iosInfo.identifierForVendor;
+      device.deviceId = iosInfo.identifierForVendor!;
     }
   }
 
