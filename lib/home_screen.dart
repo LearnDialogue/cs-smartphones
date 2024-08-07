@@ -1,6 +1,7 @@
 import 'dart:async';
 import 'dart:io';
 import 'dart:ui';
+import 'dart:convert';
 
 import 'package:device_info_plus/device_info_plus.dart';
 import 'package:flutter/material.dart';
@@ -20,6 +21,8 @@ import 'monitor_connect.dart';
 import 'settings.dart';
 import 'past_workouts.dart';
 import 'app_logger.dart';
+import 'package:path_provider/path_provider.dart';
+
 
 void main() {
   WidgetsFlutterBinding.ensureInitialized();
@@ -191,7 +194,94 @@ class _HomeScreenState extends State<HomeScreen> {
   }
 
   // Default exercise type.
-  String exerciseType = "Walking";
+  String exerciseType = "Outdoor Run";
+
+  // TODO: create page file files in filesystem that represent default workout types and metrics
+  // Create default page order files
+  void createDefaultWorkouts() async {
+    String appDocumentsDirectory = (await getApplicationDocumentsDirectory()).path;
+    Directory pageOrderDir = Directory("$appDocumentsDirectory/pageOrder");
+
+    // Create default page order files if none exist yet.
+    // This is a map from index of metric (what order it
+    // comes in) and the name of the metric;
+
+    // I used the smartwatch as a template here, but had to
+    // change one thing. In the watch, I just had the key as a single
+    // integer that represented the order in the pages that this
+    // metric lived at. Here, the key represents what box of metrics
+    // this metric belongs to in the ui, and the list is the ordered
+    // list of metrics in that box.
+
+    if (!pageOrderDir.existsSync())
+    {
+      try {
+        // default outdoor run
+        File outRunFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Run.json").create(recursive: true);
+        Map<String, List<String>> strKeys = {
+          "0": ["Distance", "Speed", "Pace", "Heart Rate Zone"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"],
+        };
+        String jsonString = jsonEncode(strKeys);
+        await outRunFile.writeAsString(jsonString);
+
+        // default indoor run
+        File inRunFile = await File("$appDocumentsDirectory/pageOrder/Indoor Run.json").create(recursive: true);
+        strKeys = {
+          "0": ["Heart Rate Zone"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"]
+        };
+        jsonString = jsonEncode(strKeys);
+        await inRunFile.writeAsString(jsonString);
+
+        // default outdoor walk
+        File outWalkFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Walk.json").create(recursive: true);
+        strKeys = {
+          "0": ["Distance", "Speed", "Pace"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"],
+        };
+        jsonString = jsonEncode(strKeys);
+        await outWalkFile.writeAsString(jsonString);
+
+        // default indoor walk
+        File inWalkFile = await File("$appDocumentsDirectory/pageOrder/Indoor Walk.json").create(recursive: true);
+        strKeys = {
+          "0": ["Heart Rate Zone"],
+          "1": ["Heart Rate"],
+          "2": ["Peer Heart Rate"]
+        };
+        jsonString = jsonEncode(strKeys);
+        await inWalkFile.writeAsString(jsonString);
+
+        // default outdoor bike
+        File outBikeFile = await File("$appDocumentsDirectory/pageOrder/Outdoor Biking.json").create(recursive: true);
+        strKeys = {
+          "0": ["Distance", "Speed", "Pace"],
+          "1": ["Heart Rate", "Power"],
+          "2": ["Peer Heart Rate", "Peer Power"],
+        };
+        jsonString = jsonEncode(strKeys);
+        await outBikeFile.writeAsString(jsonString);
+
+        // indoor bike
+        File inBikeFile = await File("$appDocumentsDirectory/pageOrder/Indoor Biking.json").create(recursive: true);
+        strKeys = {
+          "0": ["Heart Rate Zone"],
+          "1": ["Heart Rate", "Power"],
+          "2": ["Peer Heart Rate", "Peer Power"],
+        };
+        jsonString = jsonEncode(strKeys);
+        await inBikeFile.writeAsString(jsonString);
+      }
+      catch (e)
+      {
+        print("Error creating default page orders: $e");
+      }
+    }
+  }
 
   // Future map controller
   Completer<GoogleMapController> controller1 = Completer();
@@ -222,7 +312,7 @@ class _HomeScreenState extends State<HomeScreen> {
     WidgetsBinding.instance.addPostFrameCallback((timeStamp) {
       _showSetupDialog();
     });
-
+    createDefaultWorkouts();
   }
 
   // Restore saved settings from local database
@@ -570,12 +660,12 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: MaterialStateProperty.all(
                     const EdgeInsets.all(10)),
                 backgroundColor: MaterialStateProperty.all(
-                    Colors.orange), // <-- Button color
+                    const Color(0xFF4F45C2)), // <-- Button color
               ),
               onPressed: () {
                 showExerciseTypeDialog();
               },
-              child: Icon(_getIcon(), size: 30)),
+              child: Icon(_getIcon(), size: 30, color: const Color(0xFF71F1B5))),
         ),
         // Connect to sensors button
         Padding(
@@ -588,13 +678,13 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: MaterialStateProperty.all(
                     const EdgeInsets.all(10)),
                 backgroundColor: MaterialStateProperty.all(
-                    Colors.orange), // <-- Button color
+                    const Color(0xFF4F45C2)), // <-- Button color
               ),
               onPressed: () async {
                 showConnectMonitorsDialog();
               },
               child: const Icon(Icons.bluetooth_connected,
-                  size: 30)),
+                  size: 30, color: Color(0xFF71F1B5))),
         ),
         // Connect to partners button
         Padding(
@@ -607,22 +697,22 @@ class _HomeScreenState extends State<HomeScreen> {
                 padding: MaterialStateProperty.all(
                     const EdgeInsets.all(10)),
                 backgroundColor: MaterialStateProperty.all(
-                    Colors.orange), // <-- Button color
+                    const Color(0xFF4F45C2)), // <-- Button color
               ),
               onPressed: () async {
                 showConnectPartnersDialog();
               },
-              child: const Icon(Icons.people_alt_sharp)),
+              child: const Icon(Icons.people_alt_sharp, color: Color(0xFF71F1B5))),
         )
       ]);
   }
 
   // Change icon for exercise type button depending on type that is chosen.
   IconData _getIcon() {
-    if (exerciseType == 'Running') {
+    if (exerciseType == 'Outdoor Run' || exerciseType == 'Indoor Run') {
       return Icons.directions_run;
     }
-    else if (exerciseType == 'Cycling') {
+    else if (exerciseType == 'Outdoor Biking' || exerciseType == 'Indoor Biking') {
       return Icons.directions_bike;
     }
     else {
@@ -651,7 +741,7 @@ class _HomeScreenState extends State<HomeScreen> {
         link: layerLink,
         child: Column(children: [
           Container(
-            color: Colors.green,
+            color: const Color(0xFF4F45C2),
             width: screenWidth,
             height: screenHeight * 0.70, // map takes 70% of screen
             child: Container(
@@ -683,7 +773,7 @@ class _HomeScreenState extends State<HomeScreen> {
                         Padding(
                             padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
                             child: FloatingActionButton(
-                              backgroundColor: Colors.white,
+                              backgroundColor: Colors.transparent,
                               onPressed: _currentLocation,
                               child:
                                   Icon(Icons.location_on, color: Colors.black),
@@ -732,7 +822,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     },
                     style: ButtonStyle(
                         backgroundColor:
-                            MaterialStateProperty.all(Colors.green),
+                            MaterialStateProperty.all(const Color(0xFF4F45C2)),
                         minimumSize:
                             MaterialStateProperty.all<Size>(Size(350, 100)),
                         shape:
@@ -748,7 +838,7 @@ class _HomeScreenState extends State<HomeScreen> {
                           style: TextStyle(
                               fontSize: 75.0,
                               fontWeight: FontWeight.bold,
-                              color: Colors.white),
+                              color: Color(0xFFF1F1F1)),
                         ),
                         Icon(
                           Icons.play_arrow_rounded,
@@ -847,9 +937,9 @@ class _HomeScreenState extends State<HomeScreen> {
                         RoundedRectangleBorder(
                       borderRadius: BorderRadius.circular(45.0),
                     ))),
-                child: Wrap(
+                child: const Wrap(
                   alignment: WrapAlignment.spaceAround,
-                  children: const [
+                  children: [
                     Text(
                       'GO!',
                       style: TextStyle(
@@ -860,6 +950,7 @@ class _HomeScreenState extends State<HomeScreen> {
                     Icon(
                       Icons.play_arrow_rounded,
                       size: 90,
+                      color: Color(0xFF71F1B5),
                     ),
                   ],
                 ),

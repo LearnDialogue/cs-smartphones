@@ -1,6 +1,9 @@
 import 'dart:async';
 import 'dart:math';
+import 'dart:convert';
+import 'dart:io';
 
+import 'package:path_provider/path_provider.dart';
 import 'package:background_fetch/background_fetch.dart';
 import 'package:flutter/foundation.dart';
 import 'package:flutter/gestures.dart';
@@ -75,6 +78,45 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
   StreamSubscription<List<int>>? subscribeStreamHR;
   StreamSubscription<List<int>>? subscribeStreamPower;
 
+  late Map<int, List<String>> organizedMetrics = {};
+  bool isLoading = true;
+  String? errorMessage;
+
+  // initializes map of int : List<String> that represents the metric UI boxes and the metrics they contain.
+  Future<void> loadMetrics() async {
+    try {
+      String jsonString = await readJsonFile();
+      print(jsonString);
+
+      Map<String, dynamic> decodedJson = json.decode(jsonString);
+
+      Map<String, List<String>> metricsMap = {};
+      decodedJson.forEach((key, value) {
+        if (value is List<dynamic>) {
+          metricsMap[key] = List<String>.from(value);
+        }
+      });
+
+      setState(() {
+        organizedMetrics = metricsMap.map((key, value) => MapEntry(int.parse(key), value));
+        isLoading = false;
+      });
+    } catch (e) {
+      setState(() {
+        errorMessage = e.toString();
+        print('error: ${e.toString()}');
+        isLoading = false;
+      });
+    }
+  }
+
+  // opens file and gets string that represents json object stored
+  Future<String> readJsonFile() async {
+    final directory = await getApplicationDocumentsDirectory();
+    final file = File('${directory.path}/pageOrder/${widget.exerciseType}.json');
+    return await file.readAsString();
+  }
+
   @override
   void initState() {
     super.initState();
@@ -91,6 +133,9 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
     ).listen(_onPositionUpdate);
     startTimer();
     debugPrint('Exercise Type = ${widget.exerciseType}');
+
+    // initialize map of UI boxes to the metrics they contain, so we can populate appropriately.
+    loadMetrics();
 
     // Read data from connected BLE sensors
     if (deviceList.isNotEmpty && pauseWorkout) {
@@ -330,81 +375,377 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
     return totalDistance;
   }
 
-  @override
-  Widget build(BuildContext context) {
-    String twoDigits(int n) => n.toString().padLeft(2, '0');
-    String? hours, minutes, seconds;
-    hours = twoDigits(duration.inHours.remainder(60));
-    minutes = twoDigits(duration.inMinutes.remainder(60));
-    seconds = twoDigits(duration.inSeconds.remainder(60));
-
-    var screenWidth = MediaQuery.of(context).size.width;
-    var screenHeight = MediaQuery.of(context).size.height;
-
-    final double pace = _changeDistance
-        ? ((duration.inSeconds / _calculateTotalDistance()) * 1000 / 60)
-        : ((duration.inSeconds / _calculateTotalDistance()) * 1609 / 60);
-
-    final double distance = _changeDistance
-        ? (_calculateTotalDistance() / 1000)
-        : (_calculateTotalDistance() / 1609);
-
-    final double speedDisplay = _changeDistance
-        ? speed * 1.60934
-        : speed;
-
+  int getHRZone() {
     final int? maxHR = int.tryParse(widget.settings.maxHR);
-    final int? displayHRPercent = _displayPercent
-        ? ((heartrate! / maxHR!) * 100).round()
-        : heartrate;
-    final String heartRateText = _displayPercent ? '%' : 'bpm';
+    double heartRatePerc = (heartrate! / maxHR!) * 100;
 
-    int logInterval = int.parse(seconds) % 5;
-    if (timer!.isActive && logInterval == 0) {
-      widget.logger.saveTempLog();
+    if (heartRatePerc >= 0 && heartRatePerc <= 49) {
+      return 1;
+    } else if (heartRatePerc >= 50 && heartRatePerc <= 59) {
+      return 1;
+    } else if (heartRatePerc >= 60 && heartRatePerc <= 69) {
+      return 2;
+    } else if (heartRatePerc >= 70 && heartRatePerc <= 79) {
+      return 3;
+    } else if (heartRatePerc >= 80 && heartRatePerc <= 89) {
+      return 4;
+    } else {
+      return 5;
+    }
+  }
+
+  // This uses the organizedMetrics map that describes the order of the metrics in each metrics UI box to
+    // build widgets and return them as a list.
+    List<Widget> getFirstBoxWidgets()
+    {
+      try {
+        List<Widget> widgetList = [];
+        int lengthList = organizedMetrics[0]!.length;
+
+        String twoDigits(int n) => n.toString().padLeft(2, '0');
+        String? hours, minutes, seconds;
+        hours = twoDigits(duration.inHours.remainder(60));
+        minutes = twoDigits(duration.inMinutes.remainder(60));
+        seconds = twoDigits(duration.inSeconds.remainder(60));
+
+        var screenWidth = MediaQuery
+            .of(context)
+            .size
+            .width;
+        var screenHeight = MediaQuery
+            .of(context)
+            .size
+            .height;
+
+        final double pace = _changeDistance
+            ? ((duration.inSeconds / _calculateTotalDistance()) * 1000 / 60)
+            : ((duration.inSeconds / _calculateTotalDistance()) * 1609 / 60);
+
+        final double distance = _changeDistance
+            ? (_calculateTotalDistance() / 1000)
+            : (_calculateTotalDistance() / 1609);
+
+        final double speedDisplay = _changeDistance
+            ? speed * 1.60934
+            : speed;
+
+        final int? maxHR = int.tryParse(widget.settings.maxHR);
+        final int? displayHRPercent = _displayPercent
+            ? ((heartrate! / maxHR!) * 100).round()
+            : heartrate;
+        final String heartRateText = _displayPercent ? '%' : 'bpm';
+
+        int logInterval = int.parse(seconds) % 5;
+        if (timer!.isActive && logInterval == 0) {
+          widget.logger.saveTempLog();
+        }
+
+        for (int i = 0; i < lengthList; i++) {
+          switch (organizedMetrics[0]?[i]) {
+            case "Distance":
+              widgetList.add(
+                  ElevatedButton(
+                    onPressed: () {
+                      setState(() {
+                        _changeDistance = !_changeDistance;
+                      });
+                    },
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all(
+                          const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                      backgroundColor: MaterialStateProperty.all(const Color(0xFF4F45C2)),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent),
+                      shape: MaterialStateProperty.all(const CircleBorder()),
+                      elevation: MaterialStateProperty.all(0),
+                    ),
+                    child: SizedBox(
+                        height: screenHeight * 0.12,
+                        width: (screenWidth * 0.95) / 4,
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          child: Column(
+                            mainAxisAlignment: MainAxisAlignment.start,
+                            children: [
+                              const Text(
+                                'Distance',
+                                style: TextStyle(fontSize: 15,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w400),
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                _calculateTotalDistance() < 15 ? "-" : distance
+                                    .toStringAsFixed(2),
+                                style: const TextStyle(fontSize: 30,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w600,
+                                    height: 1.45),
+                                textAlign: TextAlign.center,
+                              ),
+                              Text(
+                                distanceUnits,
+                                style: const TextStyle(fontSize: 15,
+                                    color: Colors.white,
+                                    fontWeight: FontWeight.w400,
+                                    height: 1.3),
+                                textAlign: TextAlign.center,
+                              ),
+                            ],
+                          ),
+                        )
+                    ),
+                  )
+              );
+              break;
+            case "Speed":
+              widgetList.add(
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _changeDistance = !_changeDistance;
+                        });
+                      },
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                        backgroundColor: MaterialStateProperty.all(
+                            const Color(0xFF4F45C2)),
+                        overlayColor: MaterialStateProperty.all(
+                            Colors.transparent),
+                        shape: MaterialStateProperty.all(const CircleBorder()),
+                        elevation: MaterialStateProperty.all(0),
+                      ),
+                      child: SizedBox(
+                          height: screenHeight * 0.12,
+                          width: (screenWidth * 0.95) / 4,
+                          child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.start,
+                                children: [
+                                  const Text(
+                                    'Speed',
+                                    style: TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    //_calculateTotalDistance() < 15 ? "-" : (distance / (duration.inSeconds / 3600)).toStringAsFixed(1),
+                                    _calculateTotalDistance() < 15
+                                        ? "-"
+                                        : (speedDisplay).toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 30,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.45),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    '$distanceUnits/hour',
+                                    style: const TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.3),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              )
+                          )
+                      )
+                  )
+              );
+              break;
+            case "Pace":
+              widgetList.add(
+                  ElevatedButton(
+                      onPressed: () {
+                        setState(() {
+                          _changeDistance = !_changeDistance;
+                        });
+                      },
+                      style: ButtonStyle(
+                        padding: MaterialStateProperty.all(
+                            const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                        backgroundColor: MaterialStateProperty.all(
+                            Color(0xFF4F45C2)),
+                        overlayColor: MaterialStateProperty.all(
+                            Colors.transparent),
+                        shape: MaterialStateProperty.all(const CircleBorder()),
+                        elevation: MaterialStateProperty.all(0),
+                      ),
+                      child: SizedBox(
+                          height: screenHeight * 0.12,
+                          width: (screenWidth * 0.95) / 4,
+                          child: FittedBox(
+                              fit: BoxFit.scaleDown,
+
+                              child: Column(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: [
+                                  const Text(
+                                    'Pace',
+                                    style: TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    _calculateTotalDistance() < 15 ? "-" : pace
+                                        .toStringAsFixed(1),
+                                    style: const TextStyle(fontSize: 30,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.45),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                  Text(
+                                    'min/$distanceUnits',
+                                    style: const TextStyle(fontSize: 15,
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.w400,
+                                        height: 1.3),
+                                    textAlign: TextAlign.center,
+                                  ),
+                                ],
+                              )
+                          )
+                      )
+                  )
+              );
+              break;
+            case "Heart Rate Zone":
+              widgetList.add(
+                ElevatedButton(
+                    onPressed: () {
+
+                    },
+                    style: ButtonStyle(
+                      padding: MaterialStateProperty.all(
+                          const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                      backgroundColor: MaterialStateProperty.all(
+                          const Color(0xFF4F45C2)),
+                      overlayColor: MaterialStateProperty.all(
+                          Colors.transparent),
+                      shape: MaterialStateProperty.all(const CircleBorder()),
+                      elevation: MaterialStateProperty.all(0),
+                    ),
+                    child: SizedBox(
+                        height: screenHeight * 0.12,
+                        width: (screenWidth * 0.95) / 4,
+                        child: FittedBox(
+                            fit: BoxFit.scaleDown,
+
+                            child: Column(
+                              mainAxisAlignment: MainAxisAlignment.center,
+                              children: [
+                                const Text(
+                                  'Zone',
+                                  style: TextStyle(fontSize: 15,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w400),
+                                  textAlign: TextAlign.center,
+                                ),
+                                Text(
+                                  getHRZone()
+                                      .toStringAsFixed(0),
+                                  style: const TextStyle(fontSize: 30,
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w600,
+                                      height: 1.45),
+                                  textAlign: TextAlign.center,
+                                ),
+                              ],
+                            )
+                        )
+                    )
+                )
+              );
+
+
+          }
+        }
+        return widgetList;
+      }
+      catch (e)
+      {
+        print('exception: ${e.toString()}');
+        return [const Center(child: CircularProgressIndicator())];
+      }
     }
 
-    var statsRow = Row(
-      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-      children: [
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-          color: Colors.black,
-          child: SizedBox(
-            width: screenWidth * .45,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 35,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Text(
-                        userName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
+    List<Widget> getPersonalStats()
+    {
+      var screenWidth = MediaQuery.of(context).size.width;
+      var screenHeight = MediaQuery.of(context).size.height;
+      final int? maxHR = int.tryParse(widget.settings.maxHR);
+      final int? displayHRPercent = _displayPercent
+          ? ((heartrate! / maxHR!) * 100).round()
+          : heartrate;
+      final String heartRateText = _displayPercent ? '%' : 'bpm';
+
+      try
+      {
+          List<Widget> widgetList = [
+              SizedBox(
+              height: 35,
+              child:
+              Row(
+                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                children: [
+                  Text(
+                    userName,
+                    textAlign: TextAlign.center,
+                    style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, ),
                   ),
-                ),
-                SizedBox(
-                  height: 30,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const Icon(
-                          Icons.heart_broken,
-                          size: 30,
-                          color: Colors.white60,
-                        ),
-                      ),
+                ],
+              ),
+            )
+          ];
+
+          int lengthList = organizedMetrics[1]!.length;
+
+          for (int i = 0; i < lengthList; i++)
+          {
+              switch(organizedMetrics[1]?[i])
+              {
+                case "Heart Rate":
+                  widgetList.add(
+                    SizedBox(
+                      height: 30,
+                      child:
                       GestureDetector(
+                        child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          children: [
+                            SizedBox(
+                              width: screenWidth * .1,
+                              child: const Icon(Icons.heart_broken, size: 30, color: Color(0xFF71F1B5),),
+                            ),
+
+                            SizedBox(
+                                width: screenWidth * .15,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    "$displayHRPercent",
+                                    textAlign: TextAlign.center,
+                                    style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
+                                  ),)
+                            ),
+                            SizedBox(
+                                width: screenWidth * .1,
+                                child: FittedBox(
+                                    fit: BoxFit.scaleDown,
+                                    child: Text(
+                                      heartRateText,
+                                      textAlign: TextAlign.center,
+                                      style: const TextStyle(fontSize: 15, color: Color(0xFF71F1B5), fontWeight: FontWeight.w500),
+                                    ))
+                            ),
+                          ],
+                        ),
                         onTap: () {
                           if (maxHR != null) {
                             setState(() {
@@ -412,537 +753,456 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
                             });
                           }
                         },
-                        child: SizedBox(
-                          width: screenWidth * .15,
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            child: Text(
-                              "$displayHRPercent",
-                              textAlign: TextAlign.center,
-                              style: const TextStyle(
-                                fontSize: 25,
-                                color: Colors.white,
-                                fontWeight: FontWeight.w600,
-                              ),
-                            ),
+                      )
+                    )
+                  );
+                  break;
+                case "Power":
+                  widgetList.add(
+                    SizedBox(
+                      height: 45,
+                      child: Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          SizedBox(
+                            width: screenWidth * .1,
+                            child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Color(0xFF71F1B5),),
                           ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            heartRateText,
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 15,
-                              color: Colors.white60,
-                              fontWeight: FontWeight.w500,
-                            ),
+                          SizedBox(
+                              width: screenWidth * .15,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "$power",
+                                  textAlign: TextAlign.center,
+                                  style: const TextStyle(fontSize: 25, color: Colors.white, fontWeight: FontWeight.w600),
+                                ),)
                           ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 45,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const Icon(
-                          Icons.electric_bolt_sharp,
-                          size: 30,
-                          color: Colors.white60,
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .15,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "$power",
-                            textAlign: TextAlign.center,
-                            style: const TextStyle(
-                              fontSize: 25,
-                              color: Colors.white,
-                              fontWeight: FontWeight.w600,
-                            ),
+                          SizedBox(
+                              width: screenWidth * .1,
+                              child: const FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  child: Text(
+                                    "W",
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(fontSize: 15, color: Color(0xFF71F1B5), fontWeight: FontWeight.w500),
+                                  ))
                           ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "W",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.white60,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 5,
-                ),
-              ],
-            ),
-          ),
-        )
-      ],
-    );
-
-    if (BluetoothManager.instance.connectedDevices.isNotEmpty) {
-      statsRow.children.add(
-        Card(
-          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
-          color: Colors.black,
-          child: SizedBox(
-            width: screenWidth * .45,
-            child: Column(
-              children: [
-                SizedBox(
-                  height: 35,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      Text(
-                        peerName,
-                        textAlign: TextAlign.center,
-                        style: const TextStyle(
-                          fontSize: 18,
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 30,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const Icon(
-                          Icons.heart_broken,
-                          size: 30,
-                          color: Colors.red,
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .15,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "$peerHeartRate",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 25,
-                              color: Colors.red.shade200,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "bpm",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                SizedBox(
-                  height: 45,
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: [
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const Icon(
-                          Icons.electric_bolt_sharp,
-                          size: 30,
-                          color: Colors.red,
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .15,
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "$peerPower",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 25,
-                              color: Colors.red.shade200,
-                              fontWeight: FontWeight.w600,
-                            ),
-                          ),
-                        ),
-                      ),
-                      SizedBox(
-                        width: screenWidth * .1,
-                        child: const FittedBox(
-                          fit: BoxFit.scaleDown,
-                          child: Text(
-                            "W",
-                            textAlign: TextAlign.center,
-                            style: TextStyle(
-                              fontSize: 15,
-                              color: Colors.red,
-                              fontWeight: FontWeight.w500,
-                            ),
-                          ),
-                        ),
-                      ),
-                    ],
-                  ),
-                ),
-                const SizedBox(
-                  height: 5,
-                ),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
-    // Change distance units if needed.
-    if (_changeDistance) {
-      distanceUnits = 'km';
-    } else {
-      distanceUnits = 'mi';
-    }
-
-    return Scaffold(
-      body: DecoratedBox(
-        decoration: const BoxDecoration(color: Colors.black87),
-        child: Column(
-          children: [
-            /// Map
-            SizedBox(
-              height: screenHeight * 0.52,
-              width: screenWidth,
-              child: _initialPosition == null
-                  ? Center(
-                      child: Text(
-                        'loading map..',
-                        style: TextStyle(fontFamily: 'Avenir-Medium', color: Colors.grey[400]),
+                        ],
                       ),
                     )
-                  : Stack(
+                  );
+                  break;
+              }
+          }
+          widgetList.add(
+            const SizedBox(
+              height: 5,
+            )
+          );
+          return widgetList;
+      }
+      catch (e)
+      {
+        print("exception: ${e.toString()}");
+        return [const Center(child: CircularProgressIndicator())];
+      }
+    }
+
+    List<Widget> getPeerStats()
+    {
+      var screenWidth = MediaQuery.of(context).size.width;
+      try
+      {
+        List<Widget> widgetList = [
+          SizedBox(
+            height: 35,
+            child:
+            Row(
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: [
+                Text(
+                  peerName,
+                  textAlign: TextAlign.center,
+                  style: const TextStyle(fontSize: 18, color: Colors.white, fontWeight: FontWeight.bold, ),
+                ),
+              ],
+            ),
+          )
+        ];
+
+        int lengthList = organizedMetrics[2]!.length;
+
+        for (int i = 0; i < lengthList; i++)
+        {
+            switch(organizedMetrics[2]?[i])
+            {
+              case "Peer Heart Rate":
+                widgetList.add(
+                  SizedBox(
+                    height: 30,
+                    child:
+                    Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
                       children: [
-                        GoogleMap(
-                          initialCameraPosition: CameraPosition(
-                            target: LatLng(_initialPosition!.latitude, _initialPosition!.longitude),
-                            zoom: 15,
+                        SizedBox(
+                          width: screenWidth * .1,
+                          child: const Icon(Icons.heart_broken, size: 30, color: Color(0xFF71F1B5),),
+                        ),
+                        SizedBox(
+                            width: screenWidth * .15,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "$peerHeartRate",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 25, color: Colors.red.shade200, fontWeight: FontWeight.w600),
+                              ),)
+                        ),
+                        SizedBox(
+                            width: screenWidth * .1,
+                            child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "bpm",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 15, color: Colors.red, fontWeight: FontWeight.w500),
+                                ))
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+                break;
+              case "Peer Power":
+                widgetList.add(
+                  SizedBox(
+                    height: 45,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                      children: [
+                        SizedBox(
+                          width: screenWidth * .1,
+                          child: const Icon(Icons.electric_bolt_sharp, size: 30, color: Color(0xFF71F1B5),),
+                        ),
+                        SizedBox(
+                            width: screenWidth * .15,
+                            child: FittedBox(
+                              fit: BoxFit.scaleDown,
+                              child: Text(
+                                "$peerPower",
+                                textAlign: TextAlign.center,
+                                style: TextStyle(fontSize: 25, color: Colors.red.shade200, fontWeight: FontWeight.w600),
+                              ),)
+                        ),
+                        SizedBox(
+                            width: screenWidth * .1,
+                            child: const FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  "W",
+                                  textAlign: TextAlign.center,
+                                  style: TextStyle(fontSize: 15, color: Colors.red, fontWeight: FontWeight.w500),
+                                ))
+                        ),
+                      ],
+                    ),
+                  )
+                );
+                break;
+            }
+        }
+        widgetList.add(
+          const SizedBox(
+            height: 5,
+          )
+        );
+        return widgetList;
+      }
+      catch (e)
+      {
+        print("exception: ${e.toString()}");
+        return [const Center(child: CircularProgressIndicator())];
+      }
+    }
+
+    @override
+    Widget build(BuildContext context) {
+      String twoDigits(int n) => n.toString().padLeft(2, '0');
+      String? hours,minutes,seconds;
+      hours = twoDigits(duration.inHours.remainder(60));
+      minutes = twoDigits(duration.inMinutes.remainder(60));
+      seconds = twoDigits(duration.inSeconds.remainder(60));
+
+      var screenWidth = MediaQuery.of(context).size.width;
+      var screenHeight = MediaQuery.of(context).size.height;
+
+      final double pace = _changeDistance
+          ? ((duration.inSeconds / _calculateTotalDistance()) * 1000 / 60)
+          : ((duration.inSeconds / _calculateTotalDistance()) * 1609 / 60);
+
+      final double distance = _changeDistance
+          ? (_calculateTotalDistance() / 1000)
+          : (_calculateTotalDistance() / 1609);
+
+      final double speedDisplay = _changeDistance
+          ? speed * 1.60934
+          : speed;
+
+      final int? maxHR = int.tryParse(widget.settings.maxHR);
+      final int? displayHRPercent = _displayPercent
+          ? ((heartrate! / maxHR!) * 100).round()
+          : heartrate;
+      final String heartRateText = _displayPercent ? '%' : 'bpm';
+
+      int logInterval = int.parse(seconds) % 5;
+      if (timer!.isActive && logInterval == 0) {
+        widget.logger.saveTempLog();
+      }
+
+      // Create UI for monitors (both personal and for partner).
+      // TODO: Only display monitor types that are connected?
+      var statsRow = Row(
+        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+        children: [
+          Card(
+          shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+          color: Color(0xFF4F45C2),
+          child:
+              SizedBox(
+                width: screenWidth * .45,
+                child: Column(
+                  children: getPersonalStats()
+                ),
+              )
+          )
+        ],
+      );
+
+      if (BluetoothManager.instance.connectedDevices.isNotEmpty) {
+        statsRow.children.add(Card(
+            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(20.0)),
+            color: const Color(0xFF4F45C2),
+            child:
+            SizedBox(
+              width: screenWidth * .45,
+              child: Column(
+                children: getPeerStats()
+              ),
+            )
+
+        ));
+      }
+
+      // Change distance units if needed.
+      if (_changeDistance) {
+        distanceUnits = 'km';
+      }
+      else {
+        distanceUnits = 'mi';
+      }
+
+      return Scaffold(
+        body: DecoratedBox(
+          decoration: const BoxDecoration(color: Colors.black87),
+          child:
+          Column(
+              children: [
+                Padding(
+                  padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
+                  child:
+                    SizedBox(
+                      height: screenHeight * 0.12,
+                      width: screenWidth * 0.95,
+                        child: DecoratedBox(
+                          decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
+                          child: Row(
+                              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                              //crossAxisAlignment: CrossAxisAlignment.start,
+                              children: <Widget>[
+                                Row(
+                                    children: [
+                                      const SizedBox(width: 5),
+                                      SizedBox(
+                                        height: 50,
+                                        child:
+                                          Text(
+                                            widget.exerciseType,
+                                            style: const TextStyle(fontSize: 40,
+                                                color: Colors.white,
+                                                fontWeight: FontWeight.w400),
+                                          )
+                                      ),
+                                      const SizedBox(width: 1),
+                                      ElevatedButton(
+                                          onPressed: () {
+
+                                          },
+                                          style: ButtonStyle(
+                                            padding: MaterialStateProperty.all(
+                                                const EdgeInsets.fromLTRB(0, 0, 0, 0)),
+                                            backgroundColor: MaterialStateProperty.all(
+                                                const Color(0xFF4F45C2)),
+                                            overlayColor: MaterialStateProperty.all(
+                                                Colors.transparent),
+                                            shape: MaterialStateProperty.all(const CircleBorder()),
+                                            elevation: MaterialStateProperty.all(0),
+                                          ),
+                                          child: SizedBox(
+                                              height: screenHeight * 0.12,
+                                              width: (screenWidth * 0.95) / 4,
+                                              child: FittedBox(
+                                                  fit: BoxFit.scaleDown,
+                                                  child:
+                                                  Column(
+                                                    mainAxisAlignment: MainAxisAlignment.center,
+                                                    children: [
+                                                      const Text(
+                                                        'Duration',
+                                                        style: TextStyle(fontSize: 20,
+                                                            color: Colors.white,
+                                                            fontWeight: FontWeight.w400),
+                                                        textAlign: TextAlign.center,
+                                                        maxLines: 1,
+                                                      ),
+                                                      Text(
+                                                        '$minutes:$seconds',
+                                                        style: const TextStyle(fontSize: 30,
+                                                            color: Colors.white,
+                                                            fontWeight: FontWeight.w600,
+                                                            height: 1.45),
+                                                        textAlign: TextAlign.center,
+                                                        maxLines: 1,
+                                                      ),
+                                                    ],
+                                                  )
+                                              )
+                                          )),
+                                    ],
+                                ),
+                              ]
                           ),
+                        )
+                  ),
+                ),
+                SizedBox(height: screenHeight * .01),
+                /// Map
+                SizedBox(
+                  height: screenHeight * 0.45,
+                  width: screenWidth,
+                  child:
+                  _initialPosition == null ? Center(child:Text('loading map..', style: TextStyle(fontFamily: 'Avenir-Medium', color: Colors.grey[400]),),) :
+                  Stack(
+                    children: [
+                      GoogleMap(
+                          initialCameraPosition: CameraPosition(target: LatLng(_initialPosition!.latitude, _initialPosition!.longitude), zoom: 15),
                           mapType: MapType.normal,
                           onMapCreated: _onMapCreated,
                           myLocationEnabled: true,
                           myLocationButtonEnabled: false,
-                          gestureRecognizers: Set()..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer())),
-                          polylines: _polyLines,
-                        ),
-                        Padding(
+                          gestureRecognizers: Set()
+                            ..add(Factory<PanGestureRecognizer>(() => PanGestureRecognizer())),
+                          polylines: _polyLines
+
+                      ),
+                      Padding(
                           padding: EdgeInsets.fromLTRB(350, 50, 30, 0),
                           child: FloatingActionButton(
-                            backgroundColor: Colors.white,
+                            backgroundColor: Colors.transparent,
                             onPressed: _currentLocation,
-                            child: Icon(Icons.location_on, color: Colors.black),
-                          ),
-                        ),
-                      ],
-                    ),
-            ),
-
-            /// Top info box
-            Padding(
-              padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
-              child: SizedBox(
-                height: screenHeight * 0.12,
-                width: screenWidth * 0.95,
-                child: DecoratedBox(
-                  decoration: BoxDecoration(color: Colors.black, borderRadius: BorderRadius.circular(20.0)),
-                  child: Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                    children: <Widget>[
-                      Row(
-                        children: <Widget>[
-                          /// Duration
-                          ElevatedButton(
-                            onPressed: () {},
-                            style: ButtonStyle(
-                              padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                              backgroundColor: MaterialStateProperty.all(Colors.black),
-                              overlayColor: MaterialStateProperty.all(Colors.transparent),
-                              shape: MaterialStateProperty.all(const CircleBorder()),
-                            ),
-                            child: SizedBox(
-                              height: screenHeight * 0.12,
-                              width: (screenWidth * 0.95) / 4,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      'Duration',
-                                      style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                    ),
-                                    Text(
-                                      '$minutes:$seconds',
-                                      style: const TextStyle(
-                                        fontSize: 30,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.45,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                    ),
-                                    const Text(
-                                      'min:s',
-                                      style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                      textAlign: TextAlign.center,
-                                      maxLines: 1,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          /// Distance
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _changeDistance = !_changeDistance;
-                              });
-                            },
-                            style: ButtonStyle(
-                              padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                              backgroundColor: MaterialStateProperty.all(Colors.black),
-                              overlayColor: MaterialStateProperty.all(Colors.transparent),
-                              shape: MaterialStateProperty.all(const CircleBorder()),
-                            ),
-                            child: SizedBox(
-                              height: screenHeight * 0.12,
-                              width: (screenWidth * 0.95) / 4,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Distance',
-                                      style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      _calculateTotalDistance() < 15 ? "-" : distance.toStringAsFixed(2),
-                                      style: const TextStyle(
-                                        fontSize: 30,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.45,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      distanceUnits,
-                                      style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          /// Speed
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _changeDistance = !_changeDistance;
-                              });
-                            },
-                            style: ButtonStyle(
-                              padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                              backgroundColor: MaterialStateProperty.all(Colors.black),
-                              overlayColor: MaterialStateProperty.all(Colors.transparent),
-                              shape: MaterialStateProperty.all(const CircleBorder()),
-                            ),
-                            child: SizedBox(
-                              height: screenHeight * 0.12,
-                              width: (screenWidth * 0.95) / 4,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.start,
-                                  children: [
-                                    const Text(
-                                      'Speed',
-                                      style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      _calculateTotalDistance() < 15 ? "-" : (speedDisplay).toStringAsFixed(1),
-                                      style: const TextStyle(
-                                        fontSize: 30,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.45,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      '$distanceUnits/hour',
-                                      style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
-                          ),
-
-                          /// Pace
-                          ElevatedButton(
-                            onPressed: () {
-                              setState(() {
-                                _changeDistance = !_changeDistance;
-                              });
-                            },
-                            style: ButtonStyle(
-                              padding: MaterialStateProperty.all(const EdgeInsets.fromLTRB(0, 0, 0, 0)),
-                              backgroundColor: MaterialStateProperty.all(Colors.black),
-                              overlayColor: MaterialStateProperty.all(Colors.transparent),
-                              shape: MaterialStateProperty.all(const CircleBorder()),
-                            ),
-                            child: SizedBox(
-                              height: screenHeight * 0.12,
-                              width: (screenWidth * 0.95) / 4,
-                              child: FittedBox(
-                                fit: BoxFit.scaleDown,
-                                child: Column(
-                                  mainAxisAlignment: MainAxisAlignment.center,
-                                  children: [
-                                    const Text(
-                                      'Pace',
-                                      style: TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      _calculateTotalDistance() < 15 ? "-" : pace.toStringAsFixed(1),
-                                      style: const TextStyle(
-                                        fontSize: 30,
-                                        color: Colors.white,
-                                        fontWeight: FontWeight.w600,
-                                        height: 1.45,
-                                      ),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                    Text(
-                                      'min/$distanceUnits',
-                                      style: const TextStyle(fontSize: 15, color: Colors.white, fontWeight: FontWeight.w400, height: 1.3),
-                                      textAlign: TextAlign.center,
-                                    ),
-                                  ],
-                                ),
-                              ),
-                            ),
+                            child: const Icon(Icons.location_on, color: Color(0xFF4F45C2)),
                           )
-                        ],
                       ),
                     ],
                   ),
                 ),
-              ),
-            ),
-            SizedBox(height: screenHeight * .01),
-            statsRow,
-            SizedBox(height: screenHeight * .01),
-            Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                ElevatedButton(
-                  style: ButtonStyle(
-                    overlayColor: MaterialStateProperty.all(Colors.transparent),
-                    elevation: MaterialStateProperty.all(0.0),
-                    backgroundColor: MaterialStateProperty.all(Colors.transparent.withOpacity(0.0)),
-                  ),
-                  onPressed: () {
-                    setState(() {
-                      if (pauseWorkout) {
-                        widget.logger.loggerEvents.events.add(LoggerEvent(eventType: "7"));
-                        LoggerEvent loggedEvent = LoggerEvent(eventType: "2");
-                        loggedEvent.buttonName = "pause_workout";
-                        loggedEvent.processEvent();
-                        widget.logger.loggerEvents.events.add(loggedEvent);
 
-                        timer?.cancel();
-                        pauseWorkout = !pauseWorkout;
-                        stopWorkout = !stopWorkout;
-                      } else {
-                        widget.logger.loggerEvents.events.add(LoggerEvent(eventType: "8"));
-                        LoggerEvent loggedEvent = LoggerEvent(eventType: "2");
-                        loggedEvent.buttonName = "resume_workout";
-                        loggedEvent.processEvent();
-                        widget.logger.loggerEvents.events.add(loggedEvent);
-
-                        startTimer();
-                        pauseWorkout = !pauseWorkout;
-                        stopWorkout = !stopWorkout;
-                      }
-                    });
-                  },
-                  child: CircleAvatar(
-                    radius: screenHeight * .06,
-                    backgroundColor: Colors.orange,
-                    child: pauseWorkout
-                        ? Icon(Icons.pause, size: screenHeight * .1, color: Colors.white)
-                        : Icon(Icons.play_arrow, size: screenHeight * .11, color: Colors.white),
+                /// Top info box
+                Padding(
+                  padding: EdgeInsets.fromLTRB(0, screenHeight * .015, 0, 0),
+                  child: SizedBox(
+                    height: screenHeight * 0.12,
+                    width: screenWidth * 0.95,
+                    child: DecoratedBox(
+                      decoration: BoxDecoration(color: Color(0xFF4F45C2), borderRadius: BorderRadius.circular(20.0)),
+                      child: Row(
+                          mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                          //crossAxisAlignment: CrossAxisAlignment.start,
+                          children: <Widget>[
+                            Row(
+                                children: getFirstBoxWidgets()
+                            ),
+                          ]
+                      ),
+                    ),
                   ),
                 ),
-                Visibility(
-                  visible: stopWorkout,
-                  child: LongPressButton(
-                    logger: widget.logger,
-                    exerciseType: widget.exerciseType,
-                    polylines: _polyLines,
-                  ),
+                SizedBox(height: screenHeight * .01),
+                statsRow,
+                SizedBox(height: screenHeight * .01),
+                Row(
+                  mainAxisAlignment: MainAxisAlignment.center,
+                  children: [
+                    ElevatedButton(
+                        style: ButtonStyle(
+                            overlayColor: MaterialStateProperty.all(Colors.transparent),
+                            //padding: MaterialStateProperty.all(const EdgeInsets.all(10)),
+                            elevation: MaterialStateProperty.all(0.0),
+                            backgroundColor: MaterialStateProperty.all(Colors.transparent.withOpacity(0.0)),
+                        ),
+                        onPressed: () {
+                          setState(() {
+                            if(pauseWorkout)
+                            {
+                              widget.logger.loggerEvents.events.add(LoggerEvent(eventType: "7"));
+                              LoggerEvent loggedEvent = LoggerEvent(eventType: "2");
+                              loggedEvent.buttonName = "pause_workout";
+                              loggedEvent.processEvent();
+                              widget.logger.loggerEvents.events.add(loggedEvent);
+
+                              timer?.cancel();
+                              pauseWorkout = !pauseWorkout;
+                              stopWorkout = !stopWorkout;
+                            }
+                            else
+                            {
+                              widget.logger.loggerEvents.events.add(LoggerEvent(eventType: "8"));
+                              LoggerEvent loggedEvent = LoggerEvent(eventType: "2");
+                              loggedEvent.buttonName = "resume_workout";
+                              loggedEvent.processEvent();
+                              widget.logger.loggerEvents.events.add(loggedEvent);
+
+                              startTimer();
+                              pauseWorkout = !pauseWorkout;
+                              stopWorkout = !stopWorkout;
+                            }
+                          });
+                        },
+                        child:
+                        CircleAvatar(
+                          radius: screenHeight * .03,
+                          backgroundColor: const Color(0xFF4F45C2),
+                          child: pauseWorkout ?
+                          Icon(Icons.pause, size: screenHeight * .05, color: Colors.white) :
+                          Icon(Icons.play_arrow, size: screenHeight * .055, color: Colors.white),
+                        )
+                    ),
+                    Visibility(
+                        visible: stopWorkout,
+                        child: LongPressButton(logger: widget.logger, exerciseType: widget.exerciseType, polylines: _polyLines,)
+                    )
+                  ],
                 )
-              ],
-            ),
-          ],
-        ),
-      ),
-    );
-  }
+              ]
+          )
+        )
+      );
+    }
+
+    // used for debugging the organized metrics map initialization.
+    void printOrganizedMetrics(Map<int, List<String>> organizedMetrics) {
+      organizedMetrics.forEach((box, metrics) {
+        print('Box $box: ${metrics.join(', ')}');
+      });
+    }
 }
