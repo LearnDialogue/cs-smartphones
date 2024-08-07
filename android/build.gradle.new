@@ -7,24 +7,29 @@ buildscript {
     }
 
     repositories {
+        jcenter()
         google()
-        mavenCentral()
+        maven {
+            url 'https://maven.fabric.io/public'
+        }
+        //  Add this to your project
+        maven { url 'https://dl.bintray.com/android/android-tools' }
     }
 
     dependencies {
         classpath 'com.android.tools.build:gradle:7.1.2'
+        classpath 'com.google.gms:google-services:4.3.13'
         classpath "org.jetbrains.kotlin:kotlin-gradle-plugin:$kotlin_version"
     }
 }
 
 allprojects {
     repositories {
-        google()
-        mavenCentral()
+        jcenter()
         maven {
-            // [required] background_fetch
             url "${project(':background_fetch').projectDir}/libs"
         }
+        google()
     }
 }
 
