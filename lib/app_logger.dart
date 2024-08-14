@@ -87,7 +87,9 @@ class AppLogger {
   }
 
   // Prepare and save log after workout is completed normally.
-  void saveLog() async {
+  Future saveLog() async {
+    await WorkoutDatabase.instance.deleteLogById(tempLogId);
+    
     Map<String, dynamic> map = {};
 
     map['group_id'] = 2;
@@ -122,20 +124,20 @@ class AppLogger {
 
   // Function to send JSON data to analytics group.
   void uploadWorkoutLogs() async {
+    if (sending) {
+      return;
+    }
     sending = true;
     logsToSend = await WorkoutDatabase.instance.getLogs();
 
     try {
-      while (logsToSend.isNotEmpty) {
+        logsToSend.forEach((currentLog) async {
         // Create request object and prepare headers.
         HttpClient httpClient = HttpClient();
         HttpClientRequest request = await httpClient.postUrl(Uri.parse(
             'https://us-east-1.aws.data.mongodb-api.com/app/data-nphof/endpoint/data/v1/action/insertOne'));
         request.headers.set('apiKey', FlutterConfig.get('ANALYTICS_API_KEY'));
         request.headers.set("Content-Type", "application/json");
-
-        // Get the last log from the list
-        Map<String, dynamic> currentLog = logsToSend.last;
 
         // Decode currentLog['log'] if it's a JSON string
         var logData = currentLog['log'];
@@ -166,27 +168,26 @@ class AppLogger {
         // Delete pending log from db if status code was successful.
         if (response.statusCode == 201 || response.statusCode == 200) {
           print("SUCCESS UPLOADING");
-          WorkoutDatabase.instance.deleteLogById(currentLog['_id'] as int);
+          await WorkoutDatabase.instance.deleteLogById(currentLog['_id'] as int);
         } else {
           // Save for later if data can't be sent.
           workoutsToSend = true;
           debugPrint(response.reasonPhrase);
           // Stop trying to send for now.
           sending = false;
-          break;
         }
 
         // Update logsToSend before continuing loop.
         logsToSend = await WorkoutDatabase.instance.getLogs();
-      }
+      });
 
       // All logs have sent successfully.
       workoutsToSend = false;
-      sending = false;
-      WorkoutDatabase.instance.deleteLogs();
+      await WorkoutDatabase.instance.deleteLogs();
     } catch (e) {
       print("An error occurred: $e");
     }
+    sending = false;
   }
 }
 

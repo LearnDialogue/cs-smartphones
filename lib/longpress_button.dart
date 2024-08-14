@@ -23,15 +23,18 @@ class LongPressButton extends StatefulWidget {
 class _LongPressButtonState extends State<LongPressButton> {
   Timer? _timer;
   double _progress = 0;
+  bool _callbackExecuted = false;
 
   void _startTimer() {
     const interval = const Duration(milliseconds: 10);
     var elapsed = const Duration();
+    _callbackExecuted = false;
     _timer = Timer.periodic(interval, (timer) {
       elapsed += interval;
       setState(() {
         _progress = elapsed.inMilliseconds / 1000;
-        if (_progress >= 1) {
+        if (_progress >= 1 && !_callbackExecuted) {
+          _callbackExecuted = true;
           _timer?.cancel();
           _timer = null;
           _progress = 0;
@@ -44,9 +47,6 @@ class _LongPressButtonState extends State<LongPressButton> {
 
           // Finish creating workout log.
           widget.logger.saveLog();
-
-          // Delete temp log because workout is complete and about to be sent.
-          WorkoutDatabase.instance.deleteLogById(widget.logger.tempLogId);
 
           // Send logger data to analytics group.
           widget.logger.uploadWorkoutLogs();
@@ -66,6 +66,7 @@ class _LongPressButtonState extends State<LongPressButton> {
     _timer = null;
     setState(() {
       _progress = 0;
+      _callbackExecuted = false;
     });
   }
 

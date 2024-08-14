@@ -69,15 +69,15 @@ class WorkoutDatabase {
     return await db.insert(tableLogs, logMap);
   }
 
-  void deleteLogById(int logId) async {
+  Future deleteLogById(int logId) async {
     final db = await instance.database;
-    db.delete(tableLogs, where: '${LogsFields.id} = $logId');
+    await db.delete(tableLogs, where: '${LogsFields.id} = $logId');
   }
 
   // TODO: Delete logs individually as they are sent.
-  void deleteLogs() async {
+  Future deleteLogs() async {
     final db = await instance.database;
-    db.delete(tableLogs);
+    await db.delete(tableLogs);
   }
 
   Future<List<Map<String, Object?>>> getLogs() async {
