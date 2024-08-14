@@ -109,6 +109,9 @@ class _SettingsState extends State<Settings>
         await WorkoutDatabase.instance.updateSettings(settings);
     profileID = newSettings.id;
     debugPrint(profileID.toString());
+    // navigate to home screen
+    Navigator.pushReplacement(
+        context, MaterialPageRoute(builder: (context) => HomeScreen()));
   }
 
   @override

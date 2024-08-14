@@ -70,8 +70,9 @@ class _PartnerConnectState extends State<PartnerConnect> {
   String getButtonStateName(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
-      case SessionState.connecting:
         return "Connect";
+      case SessionState.connecting:
+        return "Connecting";
       default:
         return "Disconnect";
     }
@@ -91,8 +92,9 @@ class _PartnerConnectState extends State<PartnerConnect> {
   Color getButtonColor(SessionState state) {
     switch (state) {
       case SessionState.notConnected:
+        return Colors.white;
       case SessionState.connecting:
-        return Colors.green;
+        return Colors.yellow;
       default:
         return Colors.red;
     }

@@ -151,7 +151,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
             setState(() {
               heartrate = event[1];
               BluetoothManager.instance.broadcastString('0: $heartrate');
-              widget.logger.workout?.logHeartRate(event[1].toString());
+              widget.logger.workout?.logHeartRate('$heartrate');
             });
           });
         } else if (device.type == 'POWER') {
@@ -166,7 +166,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
               int temp = event[3] << 8;
               power = event[2] + temp;
               BluetoothManager.instance.broadcastString('1: $power');
-              widget.logger.workout?.logHeartRate(event[1].toString());
+              widget.logger.workout?.logPower('$power');
             });
           });
         }
@@ -956,9 +956,6 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
       final String heartRateText = _displayPercent ? '%' : 'bpm';
 
       int logInterval = int.parse(seconds) % 5;
-      if (timer!.isActive && logInterval == 0) {
-        widget.logger.saveTempLog();
-      }
 
       // Create UI for monitors (both personal and for partner).
       // TODO: Only display monitor types that are connected?
@@ -970,7 +967,7 @@ class _ActiveWorkoutState extends State<ActiveWorkout> {
           color: Color(0xFF4F45C2),
           child:
               SizedBox(
-                width: screenWidth * .45,
+                width: BluetoothManager.instance.connectedDevices.isNotEmpty ? screenWidth * .45 : screenWidth * .95,
                 child: Column(
                   children: getPersonalStats()
                 ),

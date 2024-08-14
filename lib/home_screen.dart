@@ -572,6 +572,12 @@ class _HomeScreenState extends State<HomeScreen> {
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
                   if (BluetoothManager.instance.connectedDevices.isEmpty) {
                     _showPartnerAlert();
                   }
@@ -596,7 +602,7 @@ class _HomeScreenState extends State<HomeScreen> {
                   showConnectMonitorsDialog();
                 },
                 child: const Text('Connect to sensor'),
-              ),
+              ),              
             ],
           );
         }
@@ -616,6 +622,12 @@ class _HomeScreenState extends State<HomeScreen> {
             actionsOverflowAlignment: OverflowBarAlignment.center,
             actionsOverflowDirection: VerticalDirection.up,
             actions: <Widget>[
+              TextButton(
+                onPressed: () {
+                  Navigator.of(context).pop();
+                },
+                child: const Text('Cancel'),
+              ),
               TextButton(
                 onPressed: () {
                   Navigator.of(context).pop();

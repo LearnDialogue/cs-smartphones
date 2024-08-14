@@ -20,7 +20,7 @@
     <application
         android:enableOnBackInvokedCallback="true"
         tools:replace="android:label"
-        android:label="Collaborative-Sport"
+        android:label="Connexx"
         android:name="${applicationName}"
         android:icon="@mipmap/ic_launcher">
 

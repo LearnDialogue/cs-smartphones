@@ -68,22 +68,28 @@ class BluetoothManager {
 
   // Sets the stateSubscription to detect unexpected disconnects and attempts to reconnect
   StreamSubscription? reconnectStateSubscription() {
-    stateSubscription?.cancel();
+    stateSubscription?.cancel(); // Cancel the existing subscription if any
     stateSubscription = nearbyService.stateChangedSubscription(callback: (devicesList) {
-      devicesList.forEach((device) {
-        print(
-            " deviceId: ${device.deviceId} | deviceName: ${device.deviceName} | state: ${device.state}");
-
-        if (connectedDevices.containsKey(device.deviceId) && device.state == SessionState.notConnected) {
-          // Attempt to reconnect
-          nearbyService.invitePeer(
-            deviceID: device.deviceId,
-            deviceName: device.deviceName,
-          );
+      for (var device in devicesList) {
+        print("Device state changed: ${device.deviceId} state: ${device.state}");
+        if (device.state == SessionState.notConnected && connectedDevices.containsKey(device.deviceId)) {
+          attemptReconnect(device.deviceId, device.deviceName);
         }
-      });
+      }
     });
     return stateSubscription;
+  }
+
+  void attemptReconnect(String deviceId, String deviceName, {int attempts = 0}) {
+    Future.delayed(Duration(seconds: 5), () {
+      if (!connectedDevices.containsKey(deviceId)) {
+        print("Attempting to reconnect to $deviceId, attempt #${attempts + 1}");
+        nearbyService.invitePeer(
+          deviceID: deviceId,
+          deviceName: deviceName,
+        );
+      }
+    });
   }
 
   // Sends string to all connected devices

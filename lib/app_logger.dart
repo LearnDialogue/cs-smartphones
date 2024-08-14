@@ -55,7 +55,7 @@ class AppLogger {
 
   // Save temp log during exercise, for when app closes before exercise ends.
   // Sent when app launches if not replaced by a completed exercise.
-  void saveTempLog() async {
+  Future<void> saveTempLog() async {
     Map<String, dynamic> map = {};
 
     // Use time at last log for workout end timestamp.
@@ -77,19 +77,21 @@ class AppLogger {
     // Create new log in db if temp log doesn't already exist. Otherwise, overwrite.
     if (tempLogId == -1) {
       tempLogId = await WorkoutDatabase.instance.addLog(jsonEncode(map));
-    }
-    else {
-      WorkoutDatabase.instance.deleteLogById(tempLogId);
+    } else {
+      print("Deleiing temp log with id: $tempLogId");
+      await WorkoutDatabase.instance.deleteLogById(tempLogId);
+      List<Map<String, Object?>> logs = await WorkoutDatabase.instance.getLogs();
+      logs.forEach((currentLog) async {
+        print("log with id: ${currentLog['_id']}");
+      });
       tempLogId = await WorkoutDatabase.instance.addLog(jsonEncode(map));
     }
 
     debugPrint("Temp log saved.");
-  }
+}
 
   // Prepare and save log after workout is completed normally.
-  Future saveLog() async {
-    await WorkoutDatabase.instance.deleteLogById(tempLogId);
-    
+  Future saveLog() async {    
     Map<String, dynamic> map = {};
 
     map['group_id'] = 2;
@@ -122,22 +124,37 @@ class AppLogger {
     return map;
   }
 
+  Future checkAndDeleteTempLog() async {
+    if (tempLogId != -1) {
+      await WorkoutDatabase.instance.deleteLogById(tempLogId);
+      tempLogId = -1;
+    }
+  }
+
   // Function to send JSON data to analytics group.
-  void uploadWorkoutLogs() async {
+  Future<void> uploadWorkoutLogs() async {
     if (sending) {
       return;
     }
+    await checkAndDeleteTempLog();
     sending = true;
     logsToSend = await WorkoutDatabase.instance.getLogs();
 
+    logsToSend.forEach((currentLog) async {
+        print("SENDING log with id: ${currentLog['_id']}");
+      });
+
     try {
-        logsToSend.forEach((currentLog) async {
+      while (logsToSend.isNotEmpty) {
         // Create request object and prepare headers.
         HttpClient httpClient = HttpClient();
         HttpClientRequest request = await httpClient.postUrl(Uri.parse(
             'https://us-east-1.aws.data.mongodb-api.com/app/data-nphof/endpoint/data/v1/action/insertOne'));
         request.headers.set('apiKey', FlutterConfig.get('ANALYTICS_API_KEY'));
         request.headers.set("Content-Type", "application/json");
+
+        // Get the last log from the list
+        Map<String, dynamic> currentLog = logsToSend.last;
 
         // Decode currentLog['log'] if it's a JSON string
         var logData = currentLog['log'];
@@ -175,11 +192,12 @@ class AppLogger {
           debugPrint(response.reasonPhrase);
           // Stop trying to send for now.
           sending = false;
+          break;
         }
 
         // Update logsToSend before continuing loop.
         logsToSend = await WorkoutDatabase.instance.getLogs();
-      });
+      }
 
       // All logs have sent successfully.
       workoutsToSend = false;
