@@ -139,7 +139,7 @@ class _ExerciseTypeState extends State<ExerciseType> {
             onPressed: () {
               _setColor(workoutType);
 
-              // this should just be setExerciseType in home_screen.dart
+              // this should just be setExerciseType in main.dart
               // I might be wrong though.
               widget.callBack(workoutType);
             },

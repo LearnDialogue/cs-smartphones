@@ -11,7 +11,7 @@ import 'package:sqflite/sqflite.dart';
 import 'workout_database.dart';
 
 
-import 'home_screen.dart';
+import 'main.dart';
 
 class CompletedWorkout extends StatefulWidget {
   final String jsonString;

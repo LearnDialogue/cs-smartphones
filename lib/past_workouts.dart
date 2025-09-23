@@ -10,7 +10,7 @@ import 'package:hello_world/workout_summary.dart';
 import 'package:intl/intl.dart';
 
 
-import 'home_screen.dart';
+import 'main.dart';
 
 class PastWorkouts extends StatefulWidget {
   const PastWorkouts({super.key});

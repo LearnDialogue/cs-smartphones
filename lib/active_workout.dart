@@ -18,7 +18,7 @@ import 'package:hello_world/ble_sensor_device.dart';
 import 'package:hello_world/bluetooth_manager.dart';
 import 'package:hello_world/settings.dart';
 
-import 'home_screen.dart';
+import 'main.dart';
 
 class ActiveWorkout extends StatefulWidget {
   final AppLogger logger;

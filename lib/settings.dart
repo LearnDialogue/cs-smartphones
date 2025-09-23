@@ -6,7 +6,7 @@ import 'package:google_maps_flutter/google_maps_flutter.dart';
 import 'package:hello_world/settings_model.dart';
 import 'package:hello_world/workout_database.dart';
 
-import 'home_screen.dart';
+import 'main.dart';
 
 // Class to pass settings value between pages.
 class SettingsStorage {
